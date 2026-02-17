@@ -1,0 +1,94 @@
+body {
+  margin: 0;
+}
+
+/* App layout */
+.app-container {
+  height: 100vh;
+  width: 100vw;
+  display: flex;
+  flex-direction: column;
+  font-family: Arial, Helvetica, sans-serif;
+  overflow: hidden;
+}
+
+/* Top control bar */
+.top-bar {
+  background: #1f2933;
+  padding: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  z-index: 1000;
+}
+
+/* Inputs */
+.input-box {
+  padding: 8px;
+  border-radius: 6px;
+  border: none;
+  min-width: 220px;
+  outline: none;
+}
+
+/* Destination rows */
+.destinations {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.destination-row {
+  display: flex;
+  gap: 6px;
+}
+
+/* Buttons */
+.add-btn {
+  background: #2563eb;
+  color: white;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.add-btn:hover {
+  background: #1e40af;
+}
+
+.route-btn {
+  background: #16a34a;
+  color: white;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.route-btn:hover {
+  background: #15803d;
+}
+
+.remove-btn {
+  background: #dc2626;
+  color: white;
+  border: none;
+  padding: 6px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.remove-btn:hover {
+  background: #991b1b;
+}
+
+/* Map */
+#map {
+  flex: 1;
+  height: 100%;
+  width: 100%;
+}
+
+
