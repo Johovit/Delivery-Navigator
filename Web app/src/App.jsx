@@ -122,6 +122,24 @@ function App() {
     }
   };
 
+  const nodeCities = [
+  "Chennai",
+  "Vellore",
+  "Salem",
+  "Coimbatore",
+  "Madurai",
+  "Tirunelveli",
+  "Nagercoil",
+  "Trichy",
+  "Thanjavur",
+  "Cuddalore",
+  "Erode",
+  "Krishnagiri",
+  "Dindigul",
+  "Tuticorin",
+  "Kumbakonam",
+];
+
   return (
     <div className="app-container">
       <div className="top-bar">
@@ -166,6 +184,15 @@ function App() {
         <button className="route-btn" onClick={findRoute}>
           Find Route
         </button>
+      </div>
+
+      <div className="nodes-panel">
+        <b>Node Cities:</b>
+        <ul>
+          {nodeCities.map((city, index) => (
+            <li key={index}>{city}</li>
+          ))}
+        </ul>
       </div>
 
       <div id="map"></div>
