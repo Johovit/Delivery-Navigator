@@ -1,11 +1,13 @@
 import pandas as pd
 import networkx as nx
+from itertools import combinations
 from geopy.distance import geodesic
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import joblib
 import numpy as np
 import os
+from itertools import permutations
 
 # -----------------------------
 # FastAPI App
@@ -21,7 +23,7 @@ app.add_middleware(
 )
 
 # -----------------------------
-# Load ML Model safely
+# Load ML Model
 # -----------------------------
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 model_path = os.path.join(BASE_DIR, "delivery_time_model.pkl")
@@ -33,38 +35,16 @@ model = joblib.load(model_path)
 csv_path = os.path.join(BASE_DIR, "cities.csv")
 df = pd.read_csv(csv_path)
 
-# Convert city names to lowercase once
 df["City"] = df["City"].str.lower()
 
-# -----------------------------
-# Create Graph
-# -----------------------------
-G = nx.Graph()
-
-# Add nodes
-for _, row in df.iterrows():
-    G.add_node(
-        row["City"],
-        pos=(row["Lat"], row["Lon"])
-    )
-
-# Connect every city to every other city
-cities = df["City"].tolist()
-
-for i in range(len(cities)):
-    for j in range(i + 1, len(cities)):
-        city1 = cities[i]
-        city2 = cities[j]
-
-        loc1 = df[df.City == city1][["Lat", "Lon"]].values[0]
-        loc2 = df[df.City == city2][["Lat", "Lon"]].values[0]
-
-        distance = geodesic(loc1, loc2).km
-
-        G.add_edge(city1, city2, weight=distance)
+# Create city -> (lat, lon) dictionary
+city_coords = {
+    row["City"]: (row["Lat"], row["Lon"])
+    for _, row in df.iterrows()
+}
 
 # -----------------------------
-# API Home
+# Home API
 # -----------------------------
 @app.get("/")
 def home():
@@ -76,49 +56,64 @@ def home():
 @app.get("/route")
 def get_route(source: str, destinations: str):
 
-    current_city = source.lower()
-    stops = [s.lower() for s in destinations.split(",")]
+    source = source.strip().lower()
+    stops = [d.strip().lower() for d in destinations.split(",")]
 
-    full_route = []
-    total_distance = 0
+    all_places = [source] + stops
 
-    for stop in stops:
-        route_part = nx.shortest_path(
-            G,
-            current_city,
-            stop,
-            weight="weight"
-        )
+    # Validate cities
+    for place in all_places:
+        if place not in city_coords:
+            return {"error": f"{place} not found in cities list"}
 
-        distance_part = nx.shortest_path_length(
-            G,
-            current_city,
-            stop,
-            weight="weight"
-        )
+    coords = [city_coords[p] for p in all_places]
 
-        # Avoid duplicate join nodes
-        if full_route:
-            full_route.extend(route_part[1:])
-        else:
-            full_route.extend(route_part)
+    # Create temporary graph
+    G = nx.Graph()
 
-        total_distance += distance_part
-        current_city = stop
+    # Add edges with real distances
+    for i, j in combinations(range(len(coords)), 2):
+        dist = geodesic(coords[i], coords[j]).km
+        G.add_edge(i, j, weight=dist)
 
-    # Coordinates for map drawing
-    route_coords = [
-        G.nodes[city]["pos"] for city in full_route
-    ]
+    # Solve TSP (shortest path)
+    
 
-    # Predict delivery time
-    features = np.array([[total_distance]])
-    predicted_time_minutes = model.predict(features)[0]
-    predicted_time_hours = predicted_time_minutes / 60
+    # -----------------------------
+    # Perfect Shortest Route (Brute Force)
+    # -----------------------------
+
+    best_route = None
+    min_distance = float("inf")
+
+    # Only permute destinations, source fixed
+    for perm in permutations(stops):
+        route = [source] + list(perm)
+
+        total = 0
+        for i in range(len(route) - 1):
+            total += geodesic(
+                city_coords[route[i]],
+                city_coords[route[i + 1]]
+            ).km
+
+        if total < min_distance:
+            min_distance = total
+            best_route = route
+
+    ordered_places = best_route
+    ordered_coords = [city_coords[p] for p in ordered_places]
+    total_distance = round(min_distance, 2)
+
+    # -----------------------------
+    # Predict Time using ML model
+    # -----------------------------
+    predicted_time = model.predict([[total_distance]])[0]
+    predicted_time = round(float(predicted_time), 2)
 
     return {
-        "route": full_route,
-        "coordinates": route_coords,
-        "distance_km": round(total_distance, 2),
-        "predicted_time_hours": round(float(predicted_time_hours), 2)
+        "route": ordered_places,
+        "distance_km": total_distance,
+        "predicted_time_hours": predicted_time,
+        "coordinates": ordered_coords
     }
