@@ -74,7 +74,7 @@ function App() {
 
     try {
       const res = await fetch(
-        `http://127.0.0.1:8000/route?source=${cleanSource}&destinations=${cleanStops.join(",")}`
+        `https://delivery-navigator-yikl.onrender.com/route?source=${cleanSource}&destinations=${cleanStops.join(",")}`
       );
 
       const data = await res.json();
