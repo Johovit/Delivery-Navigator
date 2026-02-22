@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <linearGradient id="pinGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%"   stop-color="#3b82f6"/>
+      <stop offset="100%" stop-color="#f97316"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-10%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="rgba(0,0,0,0.30)"/>
+    </filter>
+  </defs>
+
+  <!-- Pin body (teardrop) -->
+  <path
+    d="M32 4C21.5 4 13 12.5 13 23C13 37 32 60 32 60C32 60 51 37 51 23C51 12.5 42.5 4 32 4Z"
+    fill="url(#pinGrad)"
+    filter="url(#shadow)"
+  />
+
+  <!-- Inner white circle -->
+  <circle cx="32" cy="23" r="7.5" fill="white" opacity="0.95"/>
+
+  <!-- Subtle inner dot -->
+  <circle cx="32" cy="23" r="3" fill="url(#pinGrad)" opacity="0.8"/>
+</svg>

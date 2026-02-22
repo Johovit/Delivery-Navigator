@@ -1,127 +1,486 @@
-body {
-  margin: 0;
-}
-
-/* App layout */
+/* ===============================
+   App Layout — Sidebar + Map
+================================ */
 .app-container {
   height: 100vh;
   width: 100vw;
   display: flex;
-  flex-direction: column;
-  font-family: Arial, Helvetica, sans-serif;
   overflow: hidden;
 }
 
-/* Top control bar */
-.top-bar {
-  background: #1f2933;
-  padding: 12px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  align-items: center;
-  z-index: 1000;
-}
-
-/* Inputs */
-.input-box {
-  padding: 8px;
-  border-radius: 6px;
-  border: none;
-  min-width: 220px;
-  outline: none;
-}
-
-/* Destination rows */
-.destinations {
+/* ===============================
+   Sidebar
+================================ */
+.sidebar {
+  width: 380px;
+  min-width: 380px;
+  height: 100vh;
+  background: #1e293b;
   display: flex;
   flex-direction: column;
-  gap: 6px;
-}
-
-.destination-row {
-  display: flex;
-  gap: 6px;
-}
-
-/* Buttons */
-.add-btn {
-  background: #2563eb;
-  color: white;
-  border: none;
-  padding: 8px 14px;
-  border-radius: 6px;
-  cursor: pointer;
-}
-
-.add-btn:hover {
-  background: #1e40af;
-}
-
-.route-btn {
-  background: #16a34a;
-  color: white;
-  border: none;
-  padding: 8px 14px;
-  border-radius: 6px;
-  cursor: pointer;
-}
-
-.route-btn:hover {
-  background: #15803d;
-}
-
-.remove-btn {
-  background: #dc2626;
-  color: white;
-  border: none;
-  padding: 6px 10px;
-  border-radius: 6px;
-  cursor: pointer;
-}
-
-.remove-btn:hover {
-  background: #991b1b;
-}
-
-/* Map */
-#map {
-  flex: 1;
-  height: 100%;
-  width: 100%;
-}
-
-.emoji-marker {
-  font-size: 24px;
-  text-align: center;
-}
-
-.nodes-panel {
-  position: absolute;
-  top: 70px;
-  right: 15px;
-
-  background: #1f2933;
-  padding: 10px 14px;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
-
+  overflow-y: auto;
   z-index: 1000;
+  border-right: 1px solid #334155;
+}
+
+.sidebar-header {
+  padding: 24px 20px 16px;
+  border-bottom: 1px solid #334155;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.logo-img {
+  width: 32px;
+  height: 32px;
+}
+
+.logo h1 {
+  font-size: 20px;
+  font-weight: 700;
+  color: #f1f5f9;
+  letter-spacing: -0.3px;
+}
+
+.subtitle {
+  color: #94a3b8;
+  font-size: 13px;
+  margin-top: 6px;
+}
+
+/* ===============================
+   Input Section
+================================ */
+.input-section {
+  padding: 20px;
+  border-bottom: 1px solid #334155;
+}
+
+.input-group {
+  margin-bottom: 16px;
+}
+
+.input-group label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #cbd5e1;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+}
+
+.input-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.source-dot {
+  background: #22c55e;
+  box-shadow: 0 0 6px rgba(34, 197, 94, 0.5);
+}
+
+.dest-dot {
+  background: #ef4444;
+  box-shadow: 0 0 6px rgba(239, 68, 68, 0.5);
+}
+
+.autocomplete-wrapper {
+  position: relative;
+}
+
+.input-box {
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: 1px solid #475569;
+  background: #0f172a;
+  color: #f1f5f9;
   font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.input-box:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+.input-box::placeholder {
+  color: #64748b;
+}
+
+/* Autocomplete Suggestions */
+.suggestions-list {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: #1e293b;
+  border: 1px solid #475569;
+  border-top: none;
+  border-radius: 0 0 8px 8px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  z-index: 9999;
+  max-height: 200px;
+  overflow-y: auto;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+.suggestions-list li {
+  padding: 10px 14px;
+  color: #e2e8f0;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.suggestions-list li:hover {
+  background: #334155;
+}
+
+/* ===============================
+   Find Route Button
+================================ */
+.route-btn {
+  width: 100%;
+  padding: 12px;
+  border: none;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
   color: white;
+  cursor: pointer;
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  transition: transform 0.15s, box-shadow 0.2s;
+  margin-top: 4px;
 }
 
-/* List styling */
-.nodes-panel ul {
-  margin: 6px 0 0;
-  padding-left: 18px;
+.route-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(59, 130, 246, 0.4);
 }
 
-.nodes-panel li {
-  margin: 2px 0;
+.route-btn:active:not(:disabled) {
+  transform: translateY(0);
 }
 
-.route-panel{
-  background-color: #1f2933;
+.route-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.btn-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.error-msg {
+  margin-top: 12px;
+  padding: 10px 14px;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 8px;
+  color: #fca5a5;
+  font-size: 13px;
+}
+
+/* ===============================
+   Route Results Panel
+================================ */
+.route-results {
+  flex: 1;
+  padding: 20px;
+  overflow-y: auto;
+}
+
+.route-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.route-header h3 {
+  font-size: 15px;
+  font-weight: 600;
+  color: #f1f5f9;
+}
+
+.route-count {
+  font-size: 12px;
+  color: #94a3b8;
+  background: #334155;
+  padding: 3px 10px;
+  border-radius: 12px;
+}
+
+/* Route Cards */
+.route-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.route-card {
+  background: #0f172a;
+  border: 1px solid #334155;
+  border-radius: 12px;
+  padding: 14px;
+  cursor: pointer;
+  transition: border-color 0.2s, transform 0.15s, box-shadow 0.2s;
+}
+
+.route-card:hover {
+  border-color: #475569;
+  transform: translateY(-1px);
+}
+
+.route-card.selected {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.3), 0 4px 16px rgba(59, 130, 246, 0.1);
+}
+
+.route-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.route-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #e2e8f0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.best-badge {
+  font-size: 10px;
+  font-weight: 600;
+  color: #22c55e;
+  background: rgba(34, 197, 94, 0.1);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  padding: 2px 8px;
+  border-radius: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.active-badge {
+  font-size: 10px;
+  font-weight: 600;
+  color: #3b82f6;
+  background: rgba(59, 130, 246, 0.1);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  padding: 2px 8px;
+  border-radius: 10px;
+  text-transform: uppercase;
+}
+
+.route-card-stats {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+.stat {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.stat-icon {
+  font-size: 16px;
+  margin-top: 2px;
+}
+
+.stat-value {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: #f1f5f9;
+}
+
+.stat-label {
+  display: block;
+  font-size: 10px;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  margin-top: 1px;
+}
+
+/* ===============================
+   Map Area
+================================ */
+.map-wrapper {
+  flex: 1;
+  position: relative;
+}
+
+#map {
+  width: 100%;
+  height: 100%;
+}
+
+/* Custom Markers */
+.custom-marker {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
   color: white;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.source-marker {
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+}
+
+.dest-marker {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+}
+
+/* Map Overlay (initial state) */
+.map-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 500;
+}
+
+.map-overlay-content {
+  text-align: center;
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(8px);
+  padding: 30px 40px;
+  border-radius: 16px;
+  border: 1px solid #334155;
+}
+
+.overlay-icon {
+  font-size: 40px;
+  display: block;
+  margin-bottom: 10px;
+}
+
+.map-overlay-content p {
+  color: #94a3b8;
+  font-size: 14px;
+}
+
+/* ===============================
+   Responsive
+================================ */
+/* ===============================
+   Route Midpoint Badge
+================================ */
+.route-badge {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #fff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+  cursor: pointer;
+  transition: transform 0.15s;
+}
+
+.route-badge:hover {
+  transform: scale(1.2);
+}
+
+/* ===============================
+   Route Hover Tooltip
+================================ */
+.route-tooltip {
+  background: #1e293b !important;
+  color: #f1f5f9 !important;
+  border: 1px solid #475569 !important;
+  border-radius: 8px !important;
+  padding: 6px 10px !important;
+  font-size: 12px !important;
+  line-height: 1.5 !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4) !important;
+}
+
+.route-tooltip::before {
+  display: none !important;
+}
+
+/* ===============================
+   Delivery Animation
+================================ */
+.delivery-icon {
+  font-size: 32px;
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.4));
+  will-change: transform;
+}
+
+/* ===============================
+   Responsive
+================================ */
+@media (max-width: 768px) {
+  .app-container {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    width: 100%;
+    min-width: unset;
+    height: auto;
+    max-height: 45vh;
+    border-right: none;
+    border-bottom: 1px solid #334155;
+  }
+
+  .map-wrapper {
+    flex: 1;
+    min-height: 55vh;
+  }
 }

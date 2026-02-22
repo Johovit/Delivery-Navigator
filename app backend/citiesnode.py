@@ -1,13 +1,8 @@
 import pandas as pd
-import networkx as nx
-from itertools import combinations
-from geopy.distance import geodesic
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-import joblib
-import numpy as np
 import os
-from itertools import permutations
+import httpx
 
 # -----------------------------
 # FastAPI App
@@ -23,25 +18,21 @@ app.add_middleware(
 )
 
 # -----------------------------
-# Load ML Model
-# -----------------------------
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-model_path = os.path.join(BASE_DIR, "delivery_time_model.pkl")
-model = joblib.load(model_path)
-
-# -----------------------------
 # Load Cities Data
 # -----------------------------
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 csv_path = os.path.join(BASE_DIR, "cities.csv")
 df = pd.read_csv(csv_path)
 
-df["City"] = df["City"].str.lower()
+df["City"] = df["City"].str.lower().str.strip()
 
 # Create city -> (lat, lon) dictionary
 city_coords = {
     row["City"]: (row["Lat"], row["Lon"])
     for _, row in df.iterrows()
 }
+
+OSRM_BASE = "http://router.project-osrm.org/route/v1/driving"
 
 # -----------------------------
 # Home API
@@ -51,69 +42,77 @@ def home():
     return {"message": "Delivery Navigator API running"}
 
 # -----------------------------
-# Route API
+# Cities List API
+# -----------------------------
+@app.get("/cities")
+def get_cities():
+    cities = sorted([city.title() for city in city_coords.keys()])
+    return {"cities": cities}
+
+# -----------------------------
+# Route API (OSRM-based)
 # -----------------------------
 @app.get("/route")
-def get_route(source: str, destinations: str):
-
+async def get_route(source: str, destination: str):
     source = source.strip().lower()
-    stops = [d.strip().lower() for d in destinations.split(",")]
-
-    all_places = [source] + stops
+    destination = destination.strip().lower()
 
     # Validate cities
-    for place in all_places:
-        if place not in city_coords:
-            return {"error": f"{place} not found in cities list"}
+    if source not in city_coords:
+        return {"error": f"'{source}' not found in cities list"}
+    if destination not in city_coords:
+        return {"error": f"'{destination}' not found in cities list"}
+    if source == destination:
+        return {"error": "Source and destination must be different"}
 
-    coords = [city_coords[p] for p in all_places]
+    src_lat, src_lon = city_coords[source]
+    dst_lat, dst_lon = city_coords[destination]
 
-    # Create temporary graph
-    G = nx.Graph()
+    # Call OSRM API
+    # OSRM uses lon,lat format (not lat,lon)
+    osrm_url = (
+        f"{OSRM_BASE}/{src_lon},{src_lat};{dst_lon},{dst_lat}"
+        f"?alternatives=3&geometries=geojson&overview=full"
+    )
 
-    # Add edges with real distances
-    for i, j in combinations(range(len(coords)), 2):
-        dist = geodesic(coords[i], coords[j]).km
-        G.add_edge(i, j, weight=dist)
+    try:
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            response = await client.get(osrm_url)
+            data = response.json()
+    except Exception as e:
+        return {"error": f"Failed to reach routing service: {str(e)}"}
 
-    # Solve TSP (shortest path)
-    
+    if data.get("code") != "Ok":
+        code = data.get("code", "Unknown")
+        return {"error": f"Routing service error: {code}"}
 
-    # -----------------------------
-    # Perfect Shortest Route (Brute Force)
-    # -----------------------------
+    # Parse routes from OSRM response
+    routes = []
+    for i, osrm_route in enumerate(data["routes"]):
+        distance_km = round(osrm_route["distance"] / 1000, 2)
+        duration_minutes = round(osrm_route["duration"] / 60, 1)
 
-    best_route = None
-    min_distance = float("inf")
+        # Extract geometry — OSRM returns [lon, lat], we need [lat, lon] for Leaflet
+        raw_coords = osrm_route["geometry"]["coordinates"]
+        leaflet_coords = [[coord[1], coord[0]] for coord in raw_coords]
 
-    # Only permute destinations, source fixed
-    for perm in permutations(stops):
-        route = [source] + list(perm)
+        routes.append({
+            "index": i,
+            "distance_km": distance_km,
+            "duration_minutes": duration_minutes,
+            "is_best": False,
+            "geometry": leaflet_coords,
+        })
 
-        total = 0
-        for i in range(len(route) - 1):
-            total += geodesic(
-                city_coords[route[i]],
-                city_coords[route[i + 1]]
-            ).km
-
-        if total < min_distance:
-            min_distance = total
-            best_route = route
-
-    ordered_places = best_route
-    ordered_coords = [city_coords[p] for p in ordered_places]
-    total_distance = round(min_distance, 2)
-
-    # -----------------------------
-    # Predict Time using ML model
-    # -----------------------------
-    predicted_time = model.predict([[total_distance]])[0]
-    predicted_time = round(float(predicted_time), 2)
+    # Mark shortest route as best
+    if routes:
+        best_idx = min(range(len(routes)), key=lambda i: routes[i]["distance_km"])
+        routes[best_idx]["is_best"] = True
 
     return {
-        "route": ordered_places,
-        "distance_km": total_distance,
-        "predicted_time_hours": predicted_time,
-        "coordinates": ordered_coords
+        "source": source,
+        "destination": destination,
+        "source_coords": [src_lat, src_lon],
+        "destination_coords": [dst_lat, dst_lon],
+        "routes": routes,
     }
