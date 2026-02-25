@@ -1,37 +1,727 @@
+/* ================================================
+   App.css — Delivery Navigator Design System
+   Theme: Modern Logistics (Light)
+   Palette: Deep Blue #1E3A8A | Accent Orange #F97316
+================================================ */
+
 /* ===============================
-   App Layout — Sidebar + Map
+   Layout Shell
 ================================ */
-.app-container {
+.layout-shell {
   height: 100vh;
   width: 100vw;
   display: flex;
   overflow: hidden;
+  background: var(--bg-app);
+}
+
+.layout-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.layout-content {
+  flex: 1;
+  padding: var(--space-6);
+  overflow-y: auto;
+  background: var(--bg-app);
 }
 
 /* ===============================
-   Sidebar
+   Page Wrapper
+================================ */
+.page {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.page-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-6);
+}
+
+.page-title {
+  font-size: var(--font-xl);
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.4px;
+}
+
+/* legacy class used in JSX */
+.page-header-row h3 {
+  font-size: var(--font-xl);
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.4px;
+}
+
+.page-sub {
+  color: var(--text-muted);
+  font-size: var(--font-sm);
+  margin-top: var(--space-1);
+}
+
+/* ===============================
+   Navigation Sidebar
+================================ */
+/* ─── Sidebar shell ─────────────────────────── */
+.nav-sidebar {
+  width: 240px;
+  min-width: 240px;
+  background: var(--color-primary);
+  display: flex;
+  flex-direction: column;
+  /* Single smooth transition governs everything */
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    min-width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+  /* Sidebar must sit above Leaflet map layers (Leaflet uses up to ~600 internally) */
+  z-index: 1000;
+  /* Elevated shadow for depth */
+  box-shadow: 4px 0 24px rgba(30, 58, 138, 0.25);
+  will-change: width;
+  flex-shrink: 0;
+}
+
+.nav-sidebar.collapsed {
+  width: 68px;
+  min-width: 68px;
+}
+
+/* ─── Header ────────────────────────────────── */
+.nav-sidebar-header {
+  padding: var(--space-4);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  min-height: 68px;
+  flex-shrink: 0;
+}
+
+/* ─── Logo area ─────────────────────────────── */
+.nav-logo {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+  overflow: hidden;
+}
+
+/* SVG logo — show its real colors, no filter */
+.nav-logo-img {
+  height: 36px;
+  width: 36px;
+  flex-shrink: 0;
+  display: block;
+  object-fit: contain;
+  /* Subtle drop-shadow so it pops against dark bg */
+  filter: drop-shadow(0 1px 4px rgba(0, 0, 0, 0.35));
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.08);
+  padding: 3px;
+}
+
+/* Text fades+slides in/out via max-width + opacity */
+.nav-logo-text {
+  overflow: hidden;
+  max-width: 160px;
+  opacity: 1;
+  transition: max-width 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 0.2s ease;
+  white-space: nowrap;
+}
+
+.nav-sidebar.collapsed .nav-logo-text {
+  max-width: 0;
+  opacity: 0;
+}
+
+.nav-logo h1 {
+  font-size: 15px;
+  font-weight: 700;
+  color: #fff;
+  white-space: nowrap;
+  letter-spacing: -0.2px;
+}
+
+.nav-subtitle {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.55);
+  white-space: nowrap;
+  margin-top: 1px;
+}
+
+/* ─── Collapse button ───────────────────────── */
+.nav-collapse-btn {
+  border: none;
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.7);
+  border-radius: var(--radius-full);
+  /* Bigger hit target */
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.nav-collapse-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+}
+
+/* Rotating arrow — single character that spins */
+.nav-collapse-arrow {
+  display: inline-block;
+  font-size: 16px;
+  line-height: 1;
+  font-weight: 600;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transform: rotate(0deg);
+}
+
+.nav-collapse-arrow.rotated {
+  transform: rotate(180deg);
+}
+
+/* ─── Nav links ─────────────────────────────── */
+.nav-links {
+  padding: var(--space-3) var(--space-2);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  flex: 1;
+  overflow: hidden;
+}
+
+.nav-link {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: 10px var(--space-3);
+  border-radius: var(--radius-md);
+  color: rgba(255, 255, 255, 0.65);
+  font-size: var(--font-base);
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease,
+    padding-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  white-space: nowrap;
+  text-decoration: none;
+  overflow: hidden;
+}
+
+/* Center icons when collapsed */
+.nav-sidebar.collapsed .nav-link {
+  justify-content: center;
+  gap: 0;
+  padding: 10px 0;
+}
+
+.nav-link:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+.nav-link.active {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  font-weight: 600;
+  border-left: 3px solid var(--color-accent);
+  padding-left: calc(var(--space-3) - 3px);
+}
+
+.nav-sidebar.collapsed .nav-link.active {
+  border-left: none;
+  padding-left: 0;
+  /* Orange underline instead */
+  border-bottom: 2px solid var(--color-accent);
+}
+
+.nav-icon {
+  width: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+/* Label fades + slides out when collapsed */
+.nav-label {
+  white-space: nowrap;
+  overflow: hidden;
+  max-width: 160px;
+  opacity: 1;
+  transition: max-width 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 0.2s ease;
+}
+
+.nav-sidebar.collapsed .nav-label {
+  max-width: 0;
+  opacity: 0;
+}
+
+/* ─── Footer ────────────────────────────────── */
+.nav-sidebar-footer {
+  padding: var(--space-4);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: var(--font-xs);
+  color: rgba(255, 255, 255, 0.35);
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  max-height: 48px;
+  opacity: 1;
+  transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 0.2s ease,
+    padding 0.3s ease;
+}
+
+.nav-sidebar.collapsed .nav-sidebar-footer {
+  max-height: 0;
+  opacity: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+/* ===============================
+   Top Navbar
+================================ */
+.top-navbar {
+  height: 64px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+  padding: 0 var(--space-6);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: var(--shadow-sm);
+  flex-shrink: 0;
+  /* Below sidebar (1000) but above page content */
+  z-index: 100;
+}
+
+.top-navbar-left h2 {
+  font-size: var(--font-lg);
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.3px;
+}
+
+.top-navbar-sub {
+  display: block;
+  font-size: var(--font-xs);
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.top-navbar-right {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+/* ===============================
+   Button System
+================================ */
+
+/* Primary button */
+.primary-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: 10px var(--space-5);
+  border-radius: var(--radius-md);
+  border: none;
+  background: linear-gradient(135deg, var(--color-primary-mid), var(--color-primary));
+  color: #fff;
+  font-size: var(--font-base);
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform var(--transition-fast), box-shadow var(--transition-base);
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
+  white-space: nowrap;
+}
+
+.primary-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.35);
+}
+
+.primary-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.primary-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Accent (orange) button */
+.accent-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: 10px var(--space-5);
+  border-radius: var(--radius-md);
+  border: none;
+  background: linear-gradient(135deg, #FB923C, var(--color-accent));
+  color: #fff;
+  font-size: var(--font-base);
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform var(--transition-fast), box-shadow var(--transition-base);
+  box-shadow: 0 2px 8px rgba(249, 115, 22, 0.35);
+  white-space: nowrap;
+}
+
+.accent-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(249, 115, 22, 0.4);
+}
+
+.accent-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Secondary button */
+.secondary-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: 10px var(--space-5);
+  border-radius: var(--radius-md);
+  border: 1.5px solid var(--border);
+  background: var(--bg-surface);
+  color: var(--text-secondary);
+  font-size: var(--font-base);
+  font-weight: 500;
+  cursor: pointer;
+  transition: border-color var(--transition-fast), background var(--transition-fast), color var(--transition-fast);
+  white-space: nowrap;
+}
+
+.secondary-btn:hover:not(:disabled) {
+  border-color: var(--color-primary-light);
+  color: var(--color-primary-light);
+  background: var(--color-primary-pale);
+}
+
+/* Ghost button */
+.primary-ghost-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: 8px var(--space-4);
+  border-radius: var(--radius-md);
+  border: 1.5px solid var(--color-primary-light);
+  background: transparent;
+  color: var(--color-primary-mid);
+  font-size: var(--font-sm);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--transition-fast), color var(--transition-fast);
+  white-space: nowrap;
+}
+
+.primary-ghost-btn:hover {
+  background: var(--color-primary-pale);
+}
+
+/* Danger ghost */
+.danger-ghost-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 7px var(--space-3);
+  border-radius: var(--radius-md);
+  border: 1.5px solid #FECACA;
+  background: #FEF2F2;
+  color: var(--color-error);
+  font-size: var(--font-sm);
+  font-weight: 500;
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+
+.danger-ghost-btn:hover {
+  background: #FEE2E2;
+}
+
+/* Link button */
+.link-btn {
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--color-primary-light);
+  font-size: var(--font-sm);
+  font-weight: 500;
+  cursor: pointer;
+  transition: color var(--transition-fast);
+}
+
+.link-btn:hover {
+  color: var(--color-primary);
+}
+
+.link-btn.danger {
+  color: var(--color-error);
+}
+
+.link-btn.danger:hover {
+  color: #B91C1C;
+}
+
+/* ===============================
+   Card System
+================================ */
+.card {
+  background: var(--bg-surface);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-md);
+  padding: var(--space-5) var(--space-6);
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-4);
+}
+
+.card-header h3 {
+  font-size: var(--font-md);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.card-sub {
+  font-size: var(--font-sm);
+  color: var(--text-muted);
+}
+
+/* ===============================
+   Stat Cards — Dashboard
+================================ */
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--space-4);
+  margin-bottom: var(--space-6);
+}
+
+.stat-card {
+  background: var(--bg-surface);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  padding: var(--space-5);
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-4);
+  box-shadow: var(--shadow-md);
+  transition: box-shadow var(--transition-base), transform var(--transition-base);
+}
+
+.stat-card:hover {
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-2px);
+}
+
+.stat-card-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-md);
+  background: var(--color-primary-pale);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.stat-card-icon.accent {
+  background: var(--color-accent-pale);
+}
+
+.stat-card-icon.success {
+  background: var(--color-success-pale);
+}
+
+.stat-card-icon.warning {
+  background: var(--color-warning-pale);
+}
+
+.stat-card-icon.error {
+  background: var(--color-error-pale);
+}
+
+.stat-card-main {
+  min-width: 0;
+}
+
+.stat-card-label {
+  display: block;
+  font-size: var(--font-xs);
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.stat-card-value {
+  display: block;
+  font-size: var(--font-lg);
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-top: var(--space-1);
+  word-break: break-word;
+}
+
+.stat-card-helper {
+  display: block;
+  font-size: var(--font-xs);
+  color: var(--text-faint);
+  margin-top: 2px;
+}
+
+/* ===============================
+   Dashboard Grid
+================================ */
+.dashboard-main-grid {
+  display: grid;
+  grid-template-columns: 3fr 2fr;
+  gap: var(--space-5);
+}
+
+.dashboard-map-card,
+.dashboard-actions-card {
+  background: var(--bg-surface);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  padding: var(--space-5) var(--space-5);
+  box-shadow: var(--shadow-md);
+}
+
+.dashboard-map-wrapper {
+  /* Fixed height — tall enough to see the route clearly */
+  height: 360px;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  border: 1px solid var(--border);
+  /* No margin-top: card padding already provides spacing above */
+  /* Contain Leaflet stacking context so it never escapes above sidebar */
+  isolation: isolate;
+  position: relative;
+  z-index: 1;
+}
+
+.dashboard-map {
+  width: 100%;
+  height: 100%;
+  display: block;
+  /* remove inline-block gap */
+}
+
+/* ===============================
+   Plan Route map div
+================================ */
+/* Fills the flex-1 .map-wrapper; min-height prevents collapse on mobile */
+.plan-map {
+  width: 100%;
+  height: 100%;
+  min-height: 420px;
+  display: block;
+}
+
+.quick-actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-top: var(--space-2);
+}
+
+.quick-actions .primary-btn,
+.quick-actions .secondary-btn {
+  width: 100%;
+}
+
+/* .revenue-summary removed — card deleted from Dashboard */
+
+/* ===============================
+   Plan Route — Outer Wrapper
+================================ */
+.plan-page-wrapper {
+  height: calc(100vh - 64px - 48px);
+  /* minus navbar + footer */
+  min-height: 480px;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-container {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--border);
+  min-height: 0;
+}
+
+/* ===============================
+   Plan Route — Left Sidebar Panel
 ================================ */
 .sidebar {
-  width: 380px;
-  min-width: 380px;
-  height: 100vh;
-  background: #1e293b;
+  width: 360px;
+  min-width: 360px;
+  background: var(--bg-surface);
   display: flex;
   flex-direction: column;
   overflow-y: auto;
-  z-index: 1000;
-  border-right: 1px solid #334155;
+  border-right: 1px solid var(--border);
+  z-index: 10;
 }
 
 .sidebar-header {
-  padding: 24px 20px 16px;
-  border-bottom: 1px solid #334155;
+  padding: var(--space-5) var(--space-5) var(--space-4);
+  border-bottom: 1px solid var(--border);
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-mid) 100%);
 }
 
 .logo {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--space-3);
+}
+
+.logo-icon {
+  width: 36px;
+  height: 36px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
 }
 
 .logo-img {
@@ -40,40 +730,37 @@
 }
 
 .logo h1 {
-  font-size: 20px;
+  font-size: 16px;
   font-weight: 700;
-  color: #f1f5f9;
-  letter-spacing: -0.3px;
+  color: #fff;
 }
 
 .subtitle {
-  color: #94a3b8;
-  font-size: 13px;
-  margin-top: 6px;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: var(--font-sm);
+  margin-top: var(--space-2);
 }
 
 /* ===============================
-   Input Section
+   Input Section (PlanRoute)
 ================================ */
 .input-section {
-  padding: 20px;
-  border-bottom: 1px solid #334155;
+  padding: var(--space-5);
+  border-bottom: 1px solid var(--border);
 }
 
 .input-group {
-  margin-bottom: 16px;
+  margin-bottom: var(--space-4);
 }
 
 .input-group label {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 12px;
+  gap: var(--space-2);
+  font-size: var(--font-sm);
   font-weight: 600;
-  color: #cbd5e1;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  margin-bottom: 6px;
+  color: var(--text-secondary);
+  margin-bottom: var(--space-2);
 }
 
 .input-dot {
@@ -81,72 +768,89 @@
   height: 10px;
   border-radius: 50%;
   display: inline-block;
+  flex-shrink: 0;
 }
 
 .source-dot {
-  background: #22c55e;
-  box-shadow: 0 0 6px rgba(34, 197, 94, 0.5);
+  background: var(--color-success);
+  box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.15);
 }
 
 .dest-dot {
-  background: #ef4444;
-  box-shadow: 0 0 6px rgba(239, 68, 68, 0.5);
+  background: var(--color-error);
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.15);
 }
 
 .autocomplete-wrapper {
   position: relative;
 }
 
+/* Input field */
 .input-box {
   width: 100%;
-  padding: 10px 14px;
-  border-radius: 8px;
-  border: 1px solid #475569;
-  background: #0f172a;
-  color: #f1f5f9;
-  font-size: 14px;
+  padding: 10px var(--space-4);
+  border-radius: var(--radius-md);
+  border: 1.5px solid var(--border);
+  background: var(--bg-app);
+  color: var(--text-primary);
+  font-size: var(--font-base);
   outline: none;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.input-box:hover {
+  border-color: #CBD5E1;
 }
 
 .input-box:focus {
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
+  background: var(--bg-surface);
 }
 
 .input-box::placeholder {
-  color: #64748b;
+  color: var(--text-faint);
 }
 
-/* Autocomplete Suggestions */
+/* Autocomplete dropdown */
 .suggestions-list {
   position: absolute;
-  top: 100%;
+  top: calc(100% + 4px);
   left: 0;
   right: 0;
-  background: #1e293b;
-  border: 1px solid #475569;
-  border-top: none;
-  border-radius: 0 0 8px 8px;
+  background: var(--bg-surface);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-md);
   list-style: none;
   margin: 0;
-  padding: 0;
+  padding: var(--space-1) 0;
   z-index: 9999;
   max-height: 200px;
   overflow-y: auto;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  box-shadow: var(--shadow-lg);
 }
 
 .suggestions-list li {
-  padding: 10px 14px;
-  color: #e2e8f0;
-  font-size: 13px;
+  padding: 9px var(--space-4);
+  color: var(--text-secondary);
+  font-size: var(--font-base);
   cursor: pointer;
-  transition: background 0.15s;
+  transition: background var(--transition-fast), color var(--transition-fast);
+  border-radius: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.suggestions-list li::before {
+  content: '📍';
+  font-size: 12px;
+  opacity: 0.6;
 }
 
 .suggestions-list li:hover {
-  background: #334155;
+  background: var(--color-primary-pale);
+  color: var(--color-primary);
 }
 
 /* ===============================
@@ -154,21 +858,23 @@
 ================================ */
 .route-btn {
   width: 100%;
-  padding: 12px;
+  padding: 12px var(--space-4);
   border: none;
-  border-radius: 10px;
-  font-size: 15px;
-  font-weight: 600;
+  border-radius: var(--radius-md);
+  font-size: var(--font-md);
+  font-weight: 700;
   color: white;
   cursor: pointer;
-  background: linear-gradient(135deg, #3b82f6, #2563eb);
-  transition: transform 0.15s, box-shadow 0.2s;
-  margin-top: 4px;
+  background: linear-gradient(135deg, var(--color-accent), #EA580C);
+  transition: transform var(--transition-fast), box-shadow var(--transition-base);
+  margin-top: var(--space-2);
+  letter-spacing: 0.01em;
+  box-shadow: 0 3px 12px rgba(249, 115, 22, 0.35);
 }
 
 .route-btn:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 4px 16px rgba(59, 130, 246, 0.4);
+  box-shadow: 0 6px 24px rgba(249, 115, 22, 0.45);
 }
 
 .route-btn:active:not(:disabled) {
@@ -184,16 +890,18 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
+/* Spinner */
 .spinner {
   width: 16px;
   height: 16px;
-  border: 2px solid rgba(255, 255, 255, 0.3);
+  border: 2px solid rgba(255, 255, 255, 0.4);
   border-top-color: white;
   border-radius: 50%;
-  animation: spin 0.6s linear infinite;
+  animation: spin 0.7s linear infinite;
+  flex-shrink: 0;
 }
 
 @keyframes spin {
@@ -202,14 +910,18 @@
   }
 }
 
+/* Error message */
 .error-msg {
-  margin-top: 12px;
-  padding: 10px 14px;
-  background: rgba(239, 68, 68, 0.1);
-  border: 1px solid rgba(239, 68, 68, 0.3);
-  border-radius: 8px;
-  color: #fca5a5;
-  font-size: 13px;
+  margin-top: var(--space-3);
+  padding: 10px var(--space-4);
+  background: var(--color-error-pale);
+  border: 1px solid #FECACA;
+  border-radius: var(--radius-md);
+  color: var(--color-error);
+  font-size: var(--font-sm);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
 }
 
 /* ===============================
@@ -217,7 +929,7 @@
 ================================ */
 .route-results {
   flex: 1;
-  padding: 20px;
+  padding: var(--space-5);
   overflow-y: auto;
 }
 
@@ -225,118 +937,144 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 14px;
+  margin-bottom: var(--space-4);
 }
 
 .route-header h3 {
-  font-size: 15px;
-  font-weight: 600;
-  color: #f1f5f9;
+  font-size: var(--font-base);
+  font-weight: 700;
+  color: var(--text-primary);
 }
 
 .route-count {
-  font-size: 12px;
-  color: #94a3b8;
-  background: #334155;
+  font-size: var(--font-xs);
+  color: var(--color-primary-mid);
+  background: var(--color-primary-pale);
   padding: 3px 10px;
-  border-radius: 12px;
+  border-radius: var(--radius-full);
+  font-weight: 600;
 }
 
 /* Route Cards */
 .route-cards {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: var(--space-3);
 }
 
 .route-card {
-  background: #0f172a;
-  border: 1px solid #334155;
-  border-radius: 12px;
-  padding: 14px;
+  background: var(--bg-app);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
   cursor: pointer;
-  transition: border-color 0.2s, transform 0.15s, box-shadow 0.2s;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-base), transform var(--transition-fast);
+  animation: slideUp 0.25s ease both;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .route-card:hover {
-  border-color: #475569;
+  border-color: #CBD5E1;
   transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
 }
 
 .route-card.selected {
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.3), 0 4px 16px rgba(59, 130, 246, 0.1);
+  border-color: var(--color-primary-light);
+  background: var(--color-primary-pale);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
 }
 
 .route-card-top {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 12px;
+  margin-bottom: var(--space-3);
 }
 
 .route-label {
-  font-size: 14px;
+  font-size: var(--font-base);
   font-weight: 600;
-  color: #e2e8f0;
+  color: var(--text-primary);
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .best-badge {
   font-size: 10px;
-  font-weight: 600;
-  color: #22c55e;
-  background: rgba(34, 197, 94, 0.1);
-  border: 1px solid rgba(34, 197, 94, 0.3);
+  font-weight: 700;
+  color: var(--color-accent);
+  background: var(--color-accent-pale);
+  border: 1px solid #FED7AA;
   padding: 2px 8px;
-  border-radius: 10px;
+  border-radius: var(--radius-full);
   text-transform: uppercase;
-  letter-spacing: 0.3px;
+  letter-spacing: 0.04em;
 }
 
 .active-badge {
   font-size: 10px;
-  font-weight: 600;
-  color: #3b82f6;
-  background: rgba(59, 130, 246, 0.1);
-  border: 1px solid rgba(59, 130, 246, 0.3);
+  font-weight: 700;
+  color: var(--color-primary-mid);
+  background: var(--color-primary-pale);
+  border: 1px solid #BFDBFE;
   padding: 2px 8px;
-  border-radius: 10px;
+  border-radius: var(--radius-full);
   text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
 .route-card-stats {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 8px;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-2);
 }
 
 .stat {
   display: flex;
   align-items: flex-start;
-  gap: 8px;
+  gap: var(--space-2);
+  background: var(--bg-surface);
+  border-radius: var(--radius-sm);
+  padding: var(--space-2) var(--space-2);
+  border: 1px solid var(--border);
+}
+
+.route-card.selected .stat {
+  background: rgba(255, 255, 255, 0.7);
 }
 
 .stat-icon {
-  font-size: 16px;
-  margin-top: 2px;
+  font-size: 14px;
+  margin-top: 1px;
+  flex-shrink: 0;
 }
 
 .stat-value {
   display: block;
-  font-size: 14px;
-  font-weight: 600;
-  color: #f1f5f9;
+  font-size: var(--font-sm);
+  font-weight: 700;
+  color: var(--text-primary);
+  white-space: nowrap;
 }
 
 .stat-label {
   display: block;
   font-size: 10px;
-  color: #94a3b8;
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
+  color: var(--text-faint);
+  letter-spacing: 0.02em;
   margin-top: 1px;
 }
 
@@ -346,6 +1084,14 @@
 .map-wrapper {
   flex: 1;
   position: relative;
+  min-height: 0;
+  /*
+   * isolation:isolate creates a NEW stacking context, so every
+   * Leaflet z-index (panes, controls, tooltips) is evaluated ONLY
+   * inside this box — none of them can escape above our sidebar (z-index 1000).
+   */
+  isolation: isolate;
+  z-index: 1;
 }
 
 #map {
@@ -364,56 +1110,78 @@
   font-size: 13px;
   font-weight: 700;
   color: white;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  box-shadow: var(--shadow-md);
 }
 
 .source-marker {
-  background: linear-gradient(135deg, #22c55e, #16a34a);
+  background: linear-gradient(135deg, #22C55E, #16A34A);
 }
 
 .dest-marker {
-  background: linear-gradient(135deg, #ef4444, #dc2626);
+  background: linear-gradient(135deg, #EF4444, #DC2626);
 }
 
-/* Map Overlay (initial state) */
+/* Map overlay (empty state placeholder) */
 .map-overlay {
+  /* Stretch over the entire .map-wrapper */
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  inset: 0;
   display: flex;
   align-items: center;
   justify-content: center;
+  /*
+   * z-index 1000 inside the isolated stacking context of .map-wrapper.
+   * Leaflet's highest internal pane (popup-pane) sits at 700, so this
+   * guarantees the placeholder is always rendered above every map layer.
+   * Because .map-wrapper has isolation:isolate this value has NO effect
+   * outside the map container — it does not compete with the sidebar.
+   */
+  z-index: 1000;
+  /* pointer-events:none lets map interactions pass through to the tiles */
   pointer-events: none;
-  z-index: 500;
 }
 
 .map-overlay-content {
   text-align: center;
-  background: rgba(15, 23, 42, 0.85);
+  background: rgba(255, 255, 255, 0.92);
   backdrop-filter: blur(8px);
-  padding: 30px 40px;
-  border-radius: 16px;
-  border: 1px solid #334155;
+  padding: var(--space-8) var(--space-10);
+  border-radius: var(--radius-xl);
+  border: 1.5px solid var(--border);
+  box-shadow: var(--shadow-xl);
 }
 
 .overlay-icon {
-  font-size: 40px;
+  font-size: 44px;
   display: block;
-  margin-bottom: 10px;
+  margin-bottom: var(--space-3);
 }
 
 .map-overlay-content p {
-  color: #94a3b8;
-  font-size: 14px;
+  color: var(--text-muted);
+  font-size: var(--font-base);
+  font-weight: 500;
+}
+
+/* Map tooltip */
+.route-tooltip {
+  background: var(--bg-surface) !important;
+  color: var(--text-primary) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: var(--radius-md) !important;
+  padding: 6px 10px !important;
+  font-size: var(--font-sm) !important;
+  line-height: 1.5 !important;
+  box-shadow: var(--shadow-md) !important;
+  font-family: 'Inter', sans-serif !important;
+}
+
+.route-tooltip::before {
+  display: none !important;
 }
 
 /* ===============================
-   Responsive
-================================ */
-/* ===============================
-   Route Midpoint Badge
+   Route Badge (map midpoint marker)
 ================================ */
 .route-badge {
   width: 22px;
@@ -426,47 +1194,530 @@
   align-items: center;
   justify-content: center;
   border: 2px solid #fff;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+  box-shadow: var(--shadow-md);
   cursor: pointer;
-  transition: transform 0.15s;
+  transition: transform var(--transition-fast);
 }
 
 .route-badge:hover {
-  transform: scale(1.2);
+  transform: scale(1.25);
 }
 
 /* ===============================
-   Route Hover Tooltip
-================================ */
-.route-tooltip {
-  background: #1e293b !important;
-  color: #f1f5f9 !important;
-  border: 1px solid #475569 !important;
-  border-radius: 8px !important;
-  padding: 6px 10px !important;
-  font-size: 12px !important;
-  line-height: 1.5 !important;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4) !important;
-}
-
-.route-tooltip::before {
-  display: none !important;
-}
-
-/* ===============================
-   Delivery Animation
+   Delivery Animation Icon
 ================================ */
 .delivery-icon {
   font-size: 32px;
-  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.4));
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.3));
   will-change: transform;
 }
 
 /* ===============================
-   Responsive
+   History Table
 ================================ */
-@media (max-width: 768px) {
-  .app-container {
+.route-table-wrapper {
+  background: var(--bg-surface);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-md);
+  overflow: hidden;
+}
+
+.route-table-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-4) var(--space-5);
+  border-bottom: 1px solid var(--border);
+}
+
+.route-table-header h3 {
+  font-size: var(--font-md);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.route-table-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding: var(--space-3) var(--space-5);
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-muted);
+}
+
+.table-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  /* momentum scrolling on iOS */
+  touch-action: pan-x;
+  /* allows horizontal swipe without page pan */
+}
+
+.route-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--font-sm);
+  min-width: 600px;
+}
+
+.route-table th,
+.route-table td {
+  padding: 11px var(--space-4);
+  text-align: left;
+  white-space: nowrap;
+}
+
+.route-table th {
+  font-size: var(--font-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  background: var(--bg-muted);
+  border-bottom: 1px solid var(--border);
+}
+
+.route-table td {
+  color: var(--text-secondary);
+  border-bottom: 1px solid var(--border);
+}
+
+.route-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.route-table tbody tr {
+  transition: background var(--transition-fast);
+}
+
+.route-table tbody tr:hover {
+  background: var(--color-primary-pale);
+}
+
+.route-table-actions-cell {
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+}
+
+/* ===============================
+   Empty State
+================================ */
+.empty-state {
+  padding: var(--space-8) var(--space-6);
+  border-radius: var(--radius-lg);
+  border: 2px dashed var(--border);
+  background: var(--bg-surface);
+  text-align: center;
+}
+
+.empty-state.compact {
+  padding: var(--space-8) var(--space-5);
+}
+
+.empty-icon {
+  font-size: 40px;
+  margin-bottom: var(--space-4);
+  display: block;
+}
+
+.empty-state p {
+  color: var(--text-secondary);
+  font-size: var(--font-base);
+  font-weight: 500;
+}
+
+.empty-sub {
+  margin-top: var(--space-2);
+  font-size: var(--font-sm);
+  color: var(--text-muted);
+}
+
+
+/* ===============================
+   Settings
+================================ */
+.settings-form {
+  max-width: 560px;
+  background: var(--bg-surface);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-md);
+  padding: var(--space-6);
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.settings-section-title {
+  font-size: var(--font-sm);
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid var(--border);
+  margin-bottom: var(--space-5);
+}
+
+.settings-group {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-4) 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.settings-group:last-of-type {
+  border-bottom: none;
+}
+
+.settings-label span:first-child {
+  display: block;
+  font-size: var(--font-base);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.settings-helper {
+  display: block;
+  font-size: var(--font-xs);
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.settings-input {
+  background: var(--bg-app);
+  border-radius: var(--radius-md);
+  border: 1.5px solid var(--border);
+  padding: 9px var(--space-4);
+  color: var(--text-primary);
+  font-size: var(--font-base);
+  width: 140px;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+  outline: none;
+}
+
+.settings-input:focus {
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
+}
+
+.settings-save-btn {
+  align-self: flex-start;
+  margin-top: var(--space-5);
+}
+
+/* .switch / .slider removed — toggle not used in any page */
+
+/* ===============================
+   Toasts
+================================ */
+.toast-container {
+  position: fixed;
+  right: var(--space-5);
+  bottom: var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  /* Toast must be above sidebar drawer */
+  z-index: 1100;
+}
+
+.toast {
+  min-width: 260px;
+  max-width: 360px;
+  padding: 12px var(--space-4);
+  border-radius: var(--radius-md);
+  font-size: var(--font-sm);
+  font-weight: 500;
+  color: var(--text-primary);
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-lg);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  border-left-width: 4px;
+  animation: toastIn 0.25s ease both;
+}
+
+@keyframes toastIn {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.toast-success {
+  border-left-color: var(--color-success);
+}
+
+.toast-info {
+  border-left-color: var(--color-primary-light);
+}
+
+.toast-error {
+  border-left-color: var(--color-error);
+}
+
+.toast-icon {
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+/* ===============================
+   Footer
+================================ */
+.app-footer {
+  background: var(--bg-surface);
+  border-top: 1px solid var(--border);
+  padding: 10px var(--space-6);
+  font-size: var(--font-xs);
+  color: var(--text-muted);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.footer-tagline {
+  color: var(--text-faint);
+  font-style: italic;
+}
+
+/* ===============================
+   Utility — visibility helpers
+================================ */
+
+/* Hidden on mobile, shown on desktop */
+.desktop-only {
+  display: flex;
+}
+
+/* Hidden on desktop, shown on mobile */
+.mobile-only {
+  display: none;
+}
+
+/* ===============================
+   Hamburger button (mobile only)
+================================ */
+.mobile-menu-btn {
+  display: none;
+  /* hidden on desktop */
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  border: none;
+  background: transparent;
+  color: var(--text-primary);
+  font-size: 20px;
+  cursor: pointer;
+  border-radius: var(--radius-md);
+  transition: background var(--transition-fast);
+  flex-shrink: 0;
+  margin-right: var(--space-2);
+}
+
+.mobile-menu-btn:hover {
+  background: var(--bg-muted);
+}
+
+/* ===============================
+   Sidebar overlay backdrop (mobile)
+================================ */
+.sidebar-overlay {
+  display: none;
+  /* hidden on desktop */
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  /* Overlay sits between map (below) and sidebar drawer (1000) */
+  z-index: 900;
+  backdrop-filter: blur(2px);
+  animation: fadeInOverlay 0.25s ease;
+}
+
+@keyframes fadeInOverlay {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+/* ===============================
+   Responsive — Large screens (1440px+)
+================================ */
+@media (min-width: 1440px) {
+  .page {
+    max-width: 1400px;
+  }
+
+  .stats-row {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+/* ===============================
+   Responsive — Laptops (1024px)
+================================ */
+@media (max-width: 1024px) {
+  .dashboard-main-grid {
+    grid-template-columns: 1fr;
+  }
+
+  /* Slightly reduce page padding on laptops */
+  .layout-content {
+    padding: var(--space-5);
+  }
+}
+
+/* ===============================
+   Responsive — Tablets & Mobile (< 768px)
+================================ */
+@media (max-width: 767px) {
+
+  /* ── Show hamburger, hide desktop-only elements ── */
+  .mobile-menu-btn {
+    display: flex;
+  }
+
+  .sidebar-overlay {
+    display: block;
+  }
+
+  .desktop-only {
+    display: none;
+  }
+
+  .mobile-only {
+    display: flex;
+  }
+
+  /* ── Nav Sidebar → fixed off-canvas drawer ── */
+  /*
+   * On desktop the sidebar is a flex child with width 240px / 68px.
+   * On mobile we pull it out of flow: position fixed, slide off left edge.
+   * It slides in when .mobile-open is set by JS.
+   */
+  .nav-sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 240px !important;
+    /* always full width on mobile drawer */
+    min-width: 240px !important;
+    z-index: 1000;
+    /* Start off-screen */
+    transform: translateX(-100%);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    /* Re-show any text/labels that desktop-collapsed state may have hidden */
+    overflow-y: auto;
+  }
+
+  /* Slide in when JS adds .mobile-open */
+  .nav-sidebar.mobile-open {
+    transform: translateX(0);
+  }
+
+  /* Always show logo text and nav labels inside the drawer */
+  .nav-sidebar .nav-logo-text {
+    max-width: 160px;
+    opacity: 1;
+  }
+
+  .nav-sidebar .nav-label {
+    max-width: 160px;
+    opacity: 1;
+  }
+
+  .nav-sidebar .nav-sidebar-footer {
+    max-height: 48px;
+    opacity: 1;
+    padding: var(--space-4);
+  }
+
+  /* Nav links: standard horizontal layout inside drawer */
+  .nav-sidebar .nav-link {
+    justify-content: flex-start;
+    gap: var(--space-3);
+    padding: 10px var(--space-3);
+  }
+
+  /* Active link: restore left border */
+  .nav-sidebar .nav-link.active {
+    border-left: 3px solid var(--color-accent);
+    border-bottom: none;
+    padding-left: calc(var(--space-3) - 3px);
+  }
+
+  /* ── Layout content — remove sidebar space ── */
+  /*
+   * Because the sidebar is now fixed on mobile it no longer
+   * takes up flex space, so layout-main can use the full width.
+   */
+  .layout-content {
+    padding: var(--space-4);
+  }
+
+  /* ── Top Navbar ── */
+  .top-navbar {
+    padding: 0 var(--space-4);
+    gap: var(--space-2);
+  }
+
+  .top-navbar-left h2 {
+    font-size: var(--font-md);
+  }
+
+  /* Page header row — stack on narrow screens */
+  .page-header-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-3);
+  }
+
+  .page-header-row .accent-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* ── Dashboard stat cards — 2 columns ── */
+  .stats-row {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  /* ── Route card stats — 2 columns ── */
+  .route-card-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  /* ── Map wrapper height ── */
+  .dashboard-map-wrapper {
+    height: clamp(200px, 35vh, 300px);
+  }
+
+  /* Plan map min-height shrinks for stacked layout */
+  .plan-map {
+    min-height: 300px;
+  }
+
+  /* ── PlanRoute: stack panel above map ── */
+  .plan-page-wrapper .app-container {
     flex-direction: column;
   }
 
@@ -474,13 +1725,72 @@
     width: 100%;
     min-width: unset;
     height: auto;
-    max-height: 45vh;
+    max-height: 42vh;
     border-right: none;
-    border-bottom: 1px solid #334155;
+    border-bottom: 1px solid var(--border);
   }
 
   .map-wrapper {
     flex: 1;
-    min-height: 55vh;
+    min-height: 50vw;
+  }
+
+  /* ── Settings form ── */
+  .settings-form {
+    max-width: 100%;
+  }
+
+  .settings-group {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .settings-input {
+    width: 100%;
+  }
+
+  /* ── Footer — single row ── */
+  .app-footer {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-1);
+    padding: var(--space-3) var(--space-4);
+  }
+}
+
+/* ===============================
+   Responsive — Small Mobile (< 480px)
+================================ */
+@media (max-width: 479px) {
+
+  /* ── Stat cards — single column ── */
+  .stats-row {
+    grid-template-columns: 1fr;
+  }
+
+  /* ── Smaller headings ── */
+  .top-navbar-left h2 {
+    font-size: var(--font-base);
+  }
+
+  .top-navbar-sub {
+    display: none;
+    /* too cramped at this size */
+  }
+
+  /* ── Buttons full-width in quick actions ── */
+  .quick-actions .accent-btn,
+  .quick-actions .secondary-btn {
+    width: 100%;
+  }
+
+  /* ── Map overlay padding ── */
+  .map-overlay-content {
+    padding: var(--space-6) var(--space-5);
+  }
+
+  /* ── Route card stats — single column ── */
+  .route-card-stats {
+    grid-template-columns: 1fr;
   }
 }
