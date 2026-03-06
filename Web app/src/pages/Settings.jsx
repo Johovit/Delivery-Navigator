@@ -5,10 +5,10 @@ function Settings() {
   const { settings, updateSettings, showToast } = useAppContext();
   const [costPerKm, setCostPerKm] = useState(settings.costPerKm);
 
-  const handleSave = (e) => {
+  const handleSave = async (e) => {
     e.preventDefault();
     const parsedCost = Number(costPerKm) || 0;
-    updateSettings({ costPerKm: parsedCost });
+    await updateSettings({ costPerKm: parsedCost });
     showToast("Settings saved", "success");
   };
 

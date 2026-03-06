@@ -2,62 +2,81 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import {
-  loadRouteHistory,
-  saveRouteHistory,
-  loadSettings,
-  saveSettings,
-} from "../utils/storage";
+  fetchRoutes,
+  insertRoute,
+  deleteRoute,
+  clearRoutes,
+} from "../services/routeService";
+import { fetchCostPerKm, saveCostPerKm } from "../services/settingsService";
 
 const AppContext = createContext(null);
 
+const DEFAULT_SETTINGS = { costPerKm: 10 };
+
 export function AppProvider({ children }) {
-  const [routeHistory, setRouteHistory] = useState(() => loadRouteHistory());
-  const [settings, setSettings] = useState(() => loadSettings());
+  const [routeHistory, setRouteHistory] = useState([]);
+  const [historyLoading, setHistoryLoading] = useState(true);
+  const [settings, setSettings] = useState(DEFAULT_SETTINGS);
+  const [settingsLoading, setSettingsLoading] = useState(true);
   const [toasts, setToasts] = useState([]);
 
-  /* ── Route history actions ─────────────────────────────────────── */
+  // Ref lets updateSettings always read the latest settings without
+  // being recreated on every settings change (fixes stale closure / re-render cascade)
+  const settingsRef = useRef(settings);
+  settingsRef.current = settings;
 
-  const addRouteRecord = useCallback((record) => {
-    setRouteHistory((prev) => {
-      const next = [...prev, record];
-      saveRouteHistory(next);
-      return next;
-    });
-  }, []); // no external deps — uses functional updater form
+  /* ── Initial load (parallel) ───────────────────────────────────── */
+  useEffect(() => {
+    let cancelled = false;
 
-  const deleteRouteById = useCallback((id) => {
-    setRouteHistory((prev) => {
-      const next = prev.filter((r) => r.id !== id);
-      saveRouteHistory(next);
-      return next;
+    Promise.all([fetchRoutes(), fetchCostPerKm()]).then(([rows, costPerKm]) => {
+      if (cancelled) return;
+      setRouteHistory(rows);
+      setHistoryLoading(false);
+      setSettings({ costPerKm });
+      setSettingsLoading(false);
     });
+
+    return () => { cancelled = true; };
   }, []);
 
-  const clearAllRoutes = useCallback(() => {
+  /* ── Route history actions ─────────────────────────────────────── */
+  const addRouteRecord = useCallback(async (record) => {
+    await insertRoute(record);
+    const rows = await fetchRoutes();
+    setRouteHistory(rows);
+  }, []);
+
+  const deleteRouteById = useCallback(async (id) => {
+    await deleteRoute(id);
+    setRouteHistory((prev) => prev.filter((r) => r.id !== id));
+  }, []);
+
+  const clearAllRoutes = useCallback(async () => {
+    await clearRoutes();
     setRouteHistory([]);
-    saveRouteHistory([]);
   }, []);
 
   /* ── Settings actions ──────────────────────────────────────────── */
-
-  const updateSettings = useCallback((partial) => {
-    setSettings((prev) => {
-      const next = { ...prev, ...partial };
-      saveSettings(next);
-      return next;
-    });
-  }, []);
+  // Deps array is empty — reads settings via ref to avoid stale closure
+  const updateSettings = useCallback(async (partial) => {
+    const next = { ...settingsRef.current, ...partial };
+    setSettings(next); // optimistic update
+    if (partial.costPerKm !== undefined) {
+      await saveCostPerKm(partial.costPerKm);
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   /* ── Toast actions ─────────────────────────────────────────────── */
-
   const showToast = useCallback((message, type = "success") => {
     const id = Date.now() + Math.random();
     setToasts((prev) => [...prev, { id, message, type }]);
-    // auto-dismiss after 3 s
     setTimeout(() => {
       setToasts((prev) => prev.filter((t) => t.id !== id));
     }, 3000);
@@ -68,18 +87,15 @@ export function AppProvider({ children }) {
   }, []);
 
   /* ── Context value ─────────────────────────────────────────────── */
-  /*
-   * All callback refs are stable (useCallback with [] deps), so useMemo
-   * only re-runs when the actual data (routeHistory / settings / toasts)
-   * changes — preventing unnecessary re-renders of every consumer.
-   */
   const value = useMemo(
     () => ({
       routeHistory,
+      historyLoading,
       addRouteRecord,
       deleteRouteById,
       clearAllRoutes,
       settings,
+      settingsLoading,
       updateSettings,
       toasts,
       showToast,
@@ -87,10 +103,12 @@ export function AppProvider({ children }) {
     }),
     [
       routeHistory,
+      historyLoading,
       addRouteRecord,
       deleteRouteById,
       clearAllRoutes,
       settings,
+      settingsLoading,
       updateSettings,
       toasts,
       showToast,
@@ -103,8 +121,6 @@ export function AppProvider({ children }) {
 
 export function useAppContext() {
   const ctx = useContext(AppContext);
-  if (!ctx) {
-    throw new Error("useAppContext must be used within AppProvider");
-  }
+  if (!ctx) throw new Error("useAppContext must be used within AppProvider");
   return ctx;
 }

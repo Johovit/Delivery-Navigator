@@ -3,19 +3,19 @@ import { useAppContext } from "../context/AppContext";
 import RouteTable from "../components/RouteTable";
 
 function RouteHistory() {
-  const { routeHistory, deleteRouteById, clearAllRoutes, showToast } =
+  const { routeHistory, historyLoading, deleteRouteById, clearAllRoutes, showToast } =
     useAppContext();
   const navigate = useNavigate();
 
-  const handleDelete = (id) => {
-    deleteRouteById(id);
+  const handleDelete = async (id) => {
+    await deleteRouteById(id);
     showToast("Route deleted", "info");
   };
 
-  const handleClearAll = () => {
+  const handleClearAll = async () => {
     if (!routeHistory.length) return;
     if (window.confirm("Clear all saved routes? This cannot be undone.")) {
-      clearAllRoutes();
+      await clearAllRoutes();
       showToast("All routes cleared", "info");
     }
   };
@@ -36,9 +36,11 @@ function RouteHistory() {
         <div>
           <h3>Route History</h3>
           <p className="page-sub">
-            {routeHistory.length > 0
-              ? `${routeHistory.length} route${routeHistory.length > 1 ? "s" : ""} saved · stored locally in your browser`
-              : "Stored locally in your browser using localStorage."}
+            {historyLoading
+              ? "Loading routes from Supabase…"
+              : routeHistory.length > 0
+                ? `${routeHistory.length} route${routeHistory.length > 1 ? "s" : ""} saved · stored in Supabase`
+                : "No routes yet. Routes are stored in Supabase."}
           </p>
         </div>
         <button

@@ -53,16 +53,18 @@ function RouteTable({ routes, onDelete, onReopen, onClearAll }) {
                 <td>{idx + 1}</td>
                 <td>{r.source}</td>
                 <td>{r.destination}</td>
-                <td>{r.distanceKm.toFixed(2)}</td>
+                <td>{(r.distance ?? r.distanceKm ?? 0).toFixed(2)}</td>
                 <td>
-                  {r.durationMinutes < 60
-                    ? `${r.durationMinutes} min`
-                    : `${Math.floor(r.durationMinutes / 60)}h ${Math.round(
-                      r.durationMinutes % 60
-                    )}m`}
+                  {(() => {
+                    const mins = r.duration ?? r.durationMinutes;
+                    if (mins == null) return "-";
+                    return mins < 60
+                      ? `${mins} min`
+                      : `${Math.floor(mins / 60)}h ${Math.round(mins % 60)}m`;
+                  })()}
                 </td>
                 <td>₹ {(r.cost || 0).toFixed(2)}</td>
-                <td>{formatDateTime(r.createdAt)}</td>
+                <td>{formatDateTime(r.created_at ?? r.createdAt)}</td>
                 <td>
                   <div className="route-table-actions-cell">
                     <button

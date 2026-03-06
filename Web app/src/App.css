@@ -663,7 +663,7 @@
   width: 100%;
 }
 
-/* .revenue-summary removed — card deleted from Dashboard */
+
 
 /* ===============================
    Plan Route — Outer Wrapper
@@ -724,10 +724,6 @@
   flex-shrink: 0;
 }
 
-.logo-img {
-  width: 32px;
-  height: 32px;
-}
 
 .logo h1 {
   font-size: 16px;
@@ -1237,13 +1233,6 @@
   color: var(--text-primary);
 }
 
-.route-table-actions {
-  display: flex;
-  justify-content: flex-end;
-  padding: var(--space-3) var(--space-5);
-  border-bottom: 1px solid var(--border);
-  background: var(--bg-muted);
-}
 
 .table-scroll {
   overflow-x: auto;

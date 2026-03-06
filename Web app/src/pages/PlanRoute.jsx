@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useLocation } from "react-router-dom";
 import L from "leaflet";
-import RouteFinder from "../RouteFinder";
+import RouteFinder from "../components/RouteFinder";
 import { useAppContext } from "../context/AppContext";
 
 function PlanRoute() {
@@ -348,7 +348,7 @@ function PlanRoute() {
       const bestRoute = enrichedRoutes[activeIdx];
       const cost = bestRoute.distance_km * settings.costPerKm;
 
-      addRouteRecord({
+      await addRouteRecord({
         id: Date.now() + Math.random(),
         source,
         destination,

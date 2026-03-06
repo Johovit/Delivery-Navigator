@@ -5,7 +5,7 @@ import StatCard from "../components/StatCard";
 import RouteMapPreview from "../components/RouteMapPreview";
 
 function Dashboard() {
-  const { routeHistory } = useAppContext();
+  const { routeHistory, historyLoading } = useAppContext();
   const navigate = useNavigate();
 
   const stats = useMemo(() => {
@@ -25,7 +25,8 @@ function Dashboard() {
     const destCounts = {};
 
     routeHistory.forEach((r) => {
-      totalDistance += r.distanceKm;
+      // Supabase column is "distance"; fall back to distanceKm for safety
+      totalDistance += r.distance ?? r.distanceKm ?? 0;
       const srcKey = r.source.toLowerCase();
       const dstKey = r.destination.toLowerCase();
       sourceCounts[srcKey] = (sourceCounts[srcKey] || 0) + 1;
@@ -37,7 +38,8 @@ function Dashboard() {
     const mostUsedDestination =
       Object.entries(destCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || "-";
 
-    const latestRoute = routeHistory[routeHistory.length - 1] || null;
+    // routeHistory is ordered newest-first from Supabase
+    const latestRoute = routeHistory[0] || null;
 
     return {
       totalRoutes,
@@ -47,6 +49,17 @@ function Dashboard() {
       latestRoute,
     };
   }, [routeHistory]);
+
+  if (historyLoading) {
+    return (
+      <div className="page dashboard-page">
+        <div className="empty-state compact">
+          <span className="empty-icon">⏳</span>
+          <p>Loading dashboard data…</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="page dashboard-page">
