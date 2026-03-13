@@ -10,6 +10,8 @@ import {
 import {
   fetchRoutes,
   insertRoute,
+  updateRouteStatus,
+  updateRouteStart,
   deleteRoute,
   clearRoutes,
 } from "../services/routeService";
@@ -48,9 +50,10 @@ export function AppProvider({ children }) {
 
   /* ── Route history actions ─────────────────────────────────────── */
   const addRouteRecord = useCallback(async (record) => {
-    await insertRoute(record);
+    const inserted = await insertRoute(record);
     const rows = await fetchRoutes();
     setRouteHistory(rows);
+    return inserted; // Return the full row so callers can capture the id
   }, []);
 
   const deleteRouteById = useCallback(async (id) => {
@@ -61,6 +64,24 @@ export function AppProvider({ children }) {
   const clearAllRoutes = useCallback(async () => {
     await clearRoutes();
     setRouteHistory([]);
+  }, []);
+
+  const updateRouteStatusById = useCallback(async (id, status, extraFields = {}) => {
+    await updateRouteStatus(id, status, extraFields);
+    setRouteHistory((prev) =>
+      prev.map((r) => (r.id === id ? { ...r, status, ...extraFields } : r))
+    );
+  }, []);
+
+  const startRouteDelivery = useCallback(async (id, startTime, estimatedDuration) => {
+    await updateRouteStart(id, startTime, estimatedDuration);
+    setRouteHistory((prev) =>
+      prev.map((r) =>
+        r.id === id
+          ? { ...r, status: "In Progress", start_time: startTime, estimated_duration: estimatedDuration }
+          : r
+      )
+    );
   }, []);
 
   /* ── Settings actions ──────────────────────────────────────────── */
@@ -94,6 +115,8 @@ export function AppProvider({ children }) {
       addRouteRecord,
       deleteRouteById,
       clearAllRoutes,
+      updateRouteStatusById,
+      startRouteDelivery,
       settings,
       settingsLoading,
       updateSettings,
@@ -107,6 +130,8 @@ export function AppProvider({ children }) {
       addRouteRecord,
       deleteRouteById,
       clearAllRoutes,
+      updateRouteStatusById,
+      startRouteDelivery,
       settings,
       settingsLoading,
       updateSettings,

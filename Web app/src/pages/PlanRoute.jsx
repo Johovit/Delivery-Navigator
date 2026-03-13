@@ -4,6 +4,18 @@ import L from "leaflet";
 import RouteFinder from "../components/RouteFinder";
 import { useAppContext } from "../context/AppContext";
 
+/** Format remaining milliseconds as human-readable string */
+function formatRemaining(ms) {
+  if (ms <= 0) return "Arrived";
+  const totalSec = Math.floor(ms / 1000);
+  const h = Math.floor(totalSec / 3600);
+  const m = Math.floor((totalSec % 3600) / 60);
+  const s = totalSec % 60;
+  if (h > 0) return `${h}h ${m}m remaining`;
+  if (m > 0) return `${m}m ${s}s remaining`;
+  return `${s}s remaining`;
+}
+
 function PlanRoute() {
   const [source, setSource] = useState("");
   const [destination, setDestination] = useState("");
@@ -15,7 +27,16 @@ function PlanRoute() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const { settings, addRouteRecord, showToast } = useAppContext();
+  // Delivery status state
+  const [deliveryStatus, setDeliveryStatus] = useState(null);
+  const [currentRouteId, setCurrentRouteId] = useState(null);
+  // Live countdown for the sidebar display
+  const [remainingMs, setRemainingMs] = useState(null);
+  const [deliveryProgress, setDeliveryProgress] = useState(0);
+  const countdownRef = useRef(null);
+  const deliveryStartRef = useRef(null); // { startMs, durationMs }
+
+  const { settings, addRouteRecord, showToast, updateRouteStatusById, startRouteDelivery } = useAppContext();
   const location = useLocation();
 
   const mapRef = useRef(null);
@@ -58,7 +79,7 @@ function PlanRoute() {
     };
   }, []);
 
-  // Prefill from history "reopen"
+  // Prefill from history "reopen" (kept for compatibility, though Reopen button is removed)
   useEffect(() => {
     if (location.state && location.state.source && location.state.destination) {
       setSource(location.state.source);
@@ -151,7 +172,7 @@ function PlanRoute() {
   };
 
   const startAnimation = useCallback(
-    (geometry, durationMinutes) => {
+    (geometry, durationMinutes, onComplete) => {
       stopAnimation();
       if (!geometry || geometry.length < 2) return;
       const animDurationMs = durationMinutes * 60 * 1000;
@@ -177,11 +198,12 @@ function PlanRoute() {
           animFrameRef.current = requestAnimationFrame(animate);
         } else {
           animFrameRef.current = null;
+          if (typeof onComplete === "function") onComplete();
         }
       };
       animFrameRef.current = requestAnimationFrame(animate);
     },
-    [stopAnimation]
+    [stopAnimation] // eslint-disable-line react-hooks/exhaustive-deps
   );
 
   const makeLabelMarker = (label, color) =>
@@ -218,6 +240,7 @@ function PlanRoute() {
       iconAnchor: [11, 11],
     });
 
+  // Draws routes on the map WITHOUT starting the lorry animation
   const drawRoutes = useCallback(
     (routeData, selectedIdx) => {
       clearMap();
@@ -291,10 +314,11 @@ function PlanRoute() {
           nodeMarkersRef.current.push(dstMarker);
         }
 
-        startAnimation(selectedRoute.geometry, selectedRoute.duration_minutes);
+        // NOTE: No startAnimation() call here — lorry only moves on "Start Delivery"
       }
     },
-    [ALT_COLORS, clearMap, makeLabelMarker, makeBadgeIcon, startAnimation]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [clearMap]
   );
 
   useEffect(() => {
@@ -316,6 +340,12 @@ function PlanRoute() {
     setError("");
     setLoading(true);
     setRoutes([]);
+    setDeliveryStatus(null);
+    setCurrentRouteId(null);
+    setRemainingMs(null);
+    setDeliveryProgress(0);
+    clearInterval(countdownRef.current);
+    deliveryStartRef.current = null;
     stopAnimation();
 
     try {
@@ -348,8 +378,8 @@ function PlanRoute() {
       const bestRoute = enrichedRoutes[activeIdx];
       const cost = bestRoute.distance_km * settings.costPerKm;
 
-      await addRouteRecord({
-        id: Date.now() + Math.random(),
+      // Insert with status "Planned" — capture the returned row id
+      const inserted = await addRouteRecord({
         source,
         destination,
         distanceKm: bestRoute.distance_km,
@@ -357,15 +387,65 @@ function PlanRoute() {
         createdAt: new Date().toISOString(),
         geometry: bestRoute.geometry,
         cost,
+        status: "Planned",
       });
 
+      if (inserted && inserted.id) {
+        setCurrentRouteId(inserted.id);
+      }
+
+      setDeliveryStatus("Planned");
       showToast("Route calculated successfully", "success");
-    } catch (err) {
-      console.error(err);
+    } catch {
       setError("Failed to connect to the server. Is the backend running?");
     } finally {
       setLoading(false);
     }
+  };
+
+  // Called when user clicks "Start Delivery"
+  const handleStartDelivery = async () => {
+    if (!routes[selectedRouteIdx]) return;
+    const route = routes[selectedRouteIdx];
+    const startTime = new Date().toISOString();
+    const durationMinutes = route.duration_minutes;
+
+    setDeliveryStatus("In Progress");
+
+    if (currentRouteId) {
+      await startRouteDelivery(currentRouteId, startTime, durationMinutes);
+    }
+
+    // Initialize live countdown
+    const startMs = new Date(startTime).getTime();
+    const durationMs = durationMinutes * 60 * 1000;
+    deliveryStartRef.current = { startMs, durationMs };
+    setRemainingMs(durationMs);
+    setDeliveryProgress(0);
+
+    clearInterval(countdownRef.current);
+    countdownRef.current = setInterval(() => {
+      const elapsed = Date.now() - deliveryStartRef.current.startMs;
+      const rem = Math.max(durationMs - elapsed, 0);
+      const prog = Math.min(elapsed / durationMs, 1);
+      setRemainingMs(rem);
+      setDeliveryProgress(prog);
+      if (rem <= 0) clearInterval(countdownRef.current);
+    }, 1000);
+
+    startAnimation(route.geometry, durationMinutes, async () => {
+      const completedTime = new Date().toISOString();
+      setDeliveryStatus("Completed");
+      setRemainingMs(0);
+      setDeliveryProgress(1);
+      clearInterval(countdownRef.current);
+      if (currentRouteId) {
+        await updateRouteStatusById(currentRouteId, "Completed", {
+          completed_time: completedTime,
+        });
+      }
+      showToast("✅ Delivery completed!", "success");
+    });
   };
 
   return (
@@ -477,6 +557,46 @@ function PlanRoute() {
             destination={destination}
             costPerKm={settings.costPerKm}
           />
+
+          {/* Delivery Status Bar — shown after route is planned */}
+          {deliveryStatus && (
+            <div className="delivery-status-bar">
+              {deliveryStatus === "Planned" && (
+                <button
+                  id="start-delivery-btn"
+                  className="start-delivery-btn"
+                  onClick={handleStartDelivery}
+                >
+                  🚚 Start Delivery
+                </button>
+              )}
+              {deliveryStatus === "In Progress" && (
+                <div className="delivery-live-panel">
+                  <div className="delivery-live-header">
+                    <span className="status-pulse" />
+                    <span className="delivery-live-title">Delivery In Progress</span>
+                  </div>
+                  <div className="delivery-live-countdown">
+                    ⏳ {remainingMs != null ? formatRemaining(remainingMs) : "Calculating…"}
+                  </div>
+                  <div className="delivery-live-bar-track">
+                    <div
+                      className="delivery-live-bar-fill"
+                      style={{ width: `${Math.round(deliveryProgress * 100)}%` }}
+                    />
+                  </div>
+                  <div className="delivery-live-pct">
+                    {Math.round(deliveryProgress * 100)}% complete
+                  </div>
+                </div>
+              )}
+              {deliveryStatus === "Completed" && (
+                <div className="delivery-status-pill completed">
+                  ✅ Delivery Completed
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Map — fills remaining flex space; overlay centres within it */}
