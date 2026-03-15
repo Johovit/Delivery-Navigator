@@ -89,7 +89,7 @@ function PlanRoute() {
 
   // Fetch city list on mount
   useEffect(() => {
-    fetch("http://127.0.0.1:8000/cities")
+    fetch("https://delivery-navigator-lk8a.onrender.com/cities")
       .then((res) => res.json())
       .then((data) => setCities(data.cities || []))
       .catch(() => setCities([]));
@@ -350,7 +350,7 @@ function PlanRoute() {
 
     try {
       const res = await fetch(
-        `http://127.0.0.1:8000/route?source=${encodeURIComponent(
+        `https://delivery-navigator-lk8a.onrender.com/route?source=${encodeURIComponent(
           cleanSource
         )}&destination=${encodeURIComponent(cleanDest)}`
       );
