@@ -1,0 +1,5 @@
+app backend/
+main.py
+requirements.txt
+**/*.py
+**/__pycache__/
