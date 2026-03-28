@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { logIn } from "../services/authService";
 import { useAuth } from "../context/AuthContext";
@@ -16,13 +16,17 @@ export default function Login() {
     const navigate = useNavigate();
     const { session } = useAuth();
 
+    // Redirect already-authenticated users without calling navigate() during render
     useEffect(() => {
-        return () => {
-            if (timerRef.current) clearInterval(timerRef.current);
-        };
+        if (session) navigate("/dashboard", { replace: true });
+    }, [session, navigate]);
+
+    // Cleanup cooldown timer on unmount
+    useEffect(() => {
+        return () => { if (timerRef.current) clearInterval(timerRef.current); };
     }, []);
 
-    const startCooldown = (seconds) => {
+    const startCooldown = useCallback((seconds) => {
         setCooldown(seconds);
         if (timerRef.current) clearInterval(timerRef.current);
         timerRef.current = setInterval(() => {
@@ -34,12 +38,7 @@ export default function Login() {
                 return prev - 1;
             });
         }, 1000);
-    };
-
-    if (session) {
-        navigate("/dashboard", { replace: true });
-        return null;
-    }
+    }, []);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -54,7 +53,6 @@ export default function Login() {
             await logIn(email, password);
             navigate("/dashboard");
         } catch (err) {
-            console.error("Login API error:", err); // Log API error for debugging
             
             const msg = err.message?.toLowerCase() || "";
             if (msg.includes("rate limit") || err.status === 429) {

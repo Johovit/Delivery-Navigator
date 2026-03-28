@@ -1,5 +1,3 @@
-import React from "react";
-
 export default function UserAvatar({ email }) {
   if (!email) return null;
   

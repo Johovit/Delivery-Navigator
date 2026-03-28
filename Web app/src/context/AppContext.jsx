@@ -91,6 +91,9 @@ export function AppProvider({ children }) {
 
   /* ── Auto-Complete Background Poller ───────────────────────────── */
   useEffect(() => {
+    // Don't run the poller when nobody is logged in
+    if (!user) return;
+
     const intervalId = setInterval(() => {
       setRouteHistory((currentRoutes) => {
         let hasChanges = false;
@@ -116,13 +119,16 @@ export function AppProvider({ children }) {
     }, 20000);
 
     return () => clearInterval(intervalId);
-  }, []);
+  }, [user]);
 
   /* ── Route history actions ─────────────────────────────────────── */
   const addRouteRecord = useCallback(async (record) => {
     const inserted = await insertRoute(record);
-    const rows = await fetchRoutes();
-    setRouteHistory(rows);
+    if (inserted) {
+      // Prepend the newly inserted row to avoid a redundant fetchRoutes() round-trip.
+      // Supabase returns rows ordered newest-first, so prepending keeps the same order.
+      setRouteHistory((prev) => [inserted, ...prev]);
+    }
     return inserted;
   }, []);
 

@@ -3,17 +3,18 @@ import { useLocation } from "react-router-dom";
 import L from "leaflet";
 import RouteFinder from "../components/RouteFinder";
 import { useAppContext } from "../context/AppContext";
+import {
+  interpolateAlongRoute,
+  makeLabelMarker,
+  makeBadgeIcon,
+} from "../utils/mapHelpers";
+import { formatRemaining } from "../utils/formatters";
 
-/** Format remaining milliseconds as human-readable string */
-function formatRemaining(ms) {
-  if (ms <= 0) return "Arrived";
-  const totalSec = Math.floor(ms / 1000);
-  const h = Math.floor(totalSec / 3600);
-  const m = Math.floor((totalSec % 3600) / 60);
-  const s = totalSec % 60;
-  if (h > 0) return `${h}h ${m}m remaining`;
-  if (m > 0) return `${m}m ${s}s remaining`;
-  return `${s}s remaining`;
+const ALT_COLORS = ["#a855f7", "#14b8a6", "#f97316", "#eab308", "#ec4899"];
+
+/** Return the midpoint coordinate of a geometry array */
+function midpoint(geometry) {
+  return geometry[Math.floor(geometry.length / 2)];
 }
 
 function PlanRoute() {
@@ -79,9 +80,9 @@ function PlanRoute() {
     };
   }, []);
 
-  // Prefill from history "reopen" (kept for compatibility, though Reopen button is removed)
+  // Prefill from history "reopen" navigation state
   useEffect(() => {
-    if (location.state && location.state.source && location.state.destination) {
+    if (location.state?.source && location.state?.destination) {
       setSource(location.state.source);
       setDestination(location.state.destination);
     }
@@ -144,33 +145,6 @@ function PlanRoute() {
     nodeMarkersRef.current = [];
   }, [stopAnimation]);
 
-  const pointDistance = (a, b) => {
-    const dx = b[0] - a[0];
-    const dy = b[1] - a[1];
-    return Math.sqrt(dx * dx + dy * dy);
-  };
-
-  const interpolateAlongRoute = (geometry, t) => {
-    if (!geometry || geometry.length < 2) return geometry[0];
-    const dists = [0];
-    for (let i = 1; i < geometry.length; i++) {
-      dists.push(dists[i - 1] + pointDistance(geometry[i - 1], geometry[i]));
-    }
-    const totalDist = dists[dists.length - 1];
-    const targetDist = t * totalDist;
-    for (let i = 1; i < dists.length; i++) {
-      if (targetDist <= dists[i]) {
-        const segStart = dists[i - 1];
-        const segLen = dists[i] - segStart;
-        const segT = segLen === 0 ? 0 : (targetDist - segStart) / segLen;
-        const lat = geometry[i - 1][0] + segT * (geometry[i][0] - geometry[i - 1][0]);
-        const lng = geometry[i - 1][1] + segT * (geometry[i][1] - geometry[i - 1][1]);
-        return [lat, lng];
-      }
-    }
-    return geometry[geometry.length - 1];
-  };
-
   const startAnimation = useCallback(
     (geometry, durationMinutes, onComplete) => {
       stopAnimation();
@@ -206,40 +180,6 @@ function PlanRoute() {
     [stopAnimation] // eslint-disable-line react-hooks/exhaustive-deps
   );
 
-  const makeLabelMarker = (label, color) =>
-    L.divIcon({
-      html: `<div style="
-        background:${color};
-        color:#fff;
-        font-weight:700;
-        font-size:13px;
-        width:28px;height:28px;
-        border-radius:50% 50% 50% 0;
-        transform:rotate(-45deg);
-        display:flex;align-items:center;justify-content:center;
-        border:2px solid #fff;
-        box-shadow:0 2px 8px rgba(0,0,0,0.3);
-      "><span style="transform:rotate(45deg)">${label}</span></div>`,
-      className: "",
-      iconSize: [28, 28],
-      iconAnchor: [14, 28],
-    });
-
-  const ALT_COLORS = ["#a855f7", "#14b8a6", "#f97316", "#eab308", "#ec4899"];
-
-  const midpoint = (geometry) => {
-    const mid = Math.floor(geometry.length / 2);
-    return geometry[mid];
-  };
-
-  const makeBadgeIcon = (num, color) =>
-    L.divIcon({
-      html: `<div class="route-badge" style="background:${color}">${num}</div>`,
-      className: "",
-      iconSize: [22, 22],
-      iconAnchor: [11, 11],
-    });
-
   // Draws routes on the map WITHOUT starting the lorry animation
   const drawRoutes = useCallback(
     (routeData, selectedIdx) => {
@@ -256,11 +196,10 @@ function PlanRoute() {
           dashArray: "10, 8",
         }).addTo(mapRef.current);
         polyline.bindTooltip(
-          `<b>Route ${idx + 1}</b><br>${route.distance_km} km &nbsp;·&nbsp; ${route.duration_minutes < 60
-            ? `${route.duration_minutes} min`
-            : `${Math.floor(route.duration_minutes / 60)}h ${Math.round(
-              route.duration_minutes % 60
-            )}m`
+          `<b>Route ${idx + 1}</b><br>${route.distance_km} km &nbsp;·&nbsp; ${
+            route.duration_minutes < 60
+              ? `${route.duration_minutes} min`
+              : `${Math.floor(route.duration_minutes / 60)}h ${Math.round(route.duration_minutes % 60)}m`
           }`,
           { sticky: true, className: "route-tooltip" }
         );
@@ -283,12 +222,10 @@ function PlanRoute() {
           opacity: 0.92,
         }).addTo(mapRef.current);
         selectedPolyline.bindTooltip(
-          `<b>Route ${selectedIdx + 1} ★ Best</b><br>${selectedRoute.distance_km
-          } km &nbsp;·&nbsp; ${selectedRoute.duration_minutes < 60
-            ? `${selectedRoute.duration_minutes} min`
-            : `${Math.floor(
-              selectedRoute.duration_minutes / 60
-            )}h ${Math.round(selectedRoute.duration_minutes % 60)}m`
+          `<b>Route ${selectedIdx + 1} ★ Best</b><br>${selectedRoute.distance_km} km &nbsp;·&nbsp; ${
+            selectedRoute.duration_minutes < 60
+              ? `${selectedRoute.duration_minutes} min`
+              : `${Math.floor(selectedRoute.duration_minutes / 60)}h ${Math.round(selectedRoute.duration_minutes % 60)}m`
           }`,
           { sticky: true, className: "route-tooltip" }
         );
@@ -313,8 +250,6 @@ function PlanRoute() {
           }).addTo(mapRef.current);
           nodeMarkersRef.current.push(dstMarker);
         }
-
-        // NOTE: No startAnimation() call here — lorry only moves on "Start Delivery"
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -390,7 +325,7 @@ function PlanRoute() {
         status: "Planned",
       });
 
-      if (inserted && inserted.id) {
+      if (inserted?.id) {
         setCurrentRouteId(inserted.id);
       }
 
@@ -413,8 +348,8 @@ function PlanRoute() {
     if (currentRouteId) {
       try {
         await startRouteDelivery(currentRouteId, startTime, durationMinutes);
-      } catch (err) {
-        // Block the frontend from continuing to "In Progress" if the update fails
+      } catch {
+        // Block the frontend from continuing to "In Progress" if the DB update fails
         return;
       }
     }

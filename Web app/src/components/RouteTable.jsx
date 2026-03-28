@@ -1,11 +1,5 @@
-function formatDateTime(iso) {
-  if (!iso) return "-";
-  try {
-    return new Date(iso).toLocaleString();
-  } catch {
-    return iso;
-  }
-}
+import { useAppContext } from "../context/AppContext";
+import { formatDateTime, formatDuration } from "../utils/formatters";
 
 /**
  * StatusBadge
@@ -50,10 +44,9 @@ function StatusBadge({ status, route, onTrack, onViewCompleted }) {
   return <span className={config.className}>{config.label}</span>;
 }
 
-import { useAppContext } from "../context/AppContext";
-
 function RouteTable({ routes, onDelete, onClearAll, onTrack, onViewCompleted }) {
   const { settings } = useAppContext();
+
   if (!routes || routes.length === 0) {
     return (
       <div className="empty-state">
@@ -105,16 +98,9 @@ function RouteTable({ routes, onDelete, onClearAll, onTrack, onViewCompleted }) 
                 <td>{idx + 1}</td>
                 <td>{r.source}</td>
                 <td>{r.destination}</td>
+                {/* r.distance is the DB column; r.distanceKm is the pre-save fallback */}
                 <td>{(r.distance ?? r.distanceKm ?? 0).toFixed(2)}</td>
-                <td>
-                  {(() => {
-                    const mins = r.duration ?? r.durationMinutes;
-                    if (mins == null) return "-";
-                    return mins < 60
-                      ? `${mins} min`
-                      : `${Math.floor(mins / 60)}h ${Math.round(mins % 60)}m`;
-                  })()}
-                </td>
+                <td>{formatDuration(r.duration ?? r.durationMinutes)}</td>
                 <td>₹ {((r.distance ?? r.distanceKm ?? 0) * (settings?.costPerKm || 10)).toFixed(2)}</td>
                 <td>
                   <StatusBadge

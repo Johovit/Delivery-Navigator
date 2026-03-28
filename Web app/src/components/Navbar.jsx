@@ -65,7 +65,7 @@ function Navbar({ onMenuClick = () => { } }) {
         <span className="top-navbar-sub">{page.sub}</span>
       </div>
 
-      <div className="top-navbar-right" style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+      <div className="top-navbar-right">
         <button
           type="button"
           className="accent-btn"
@@ -75,18 +75,14 @@ function Navbar({ onMenuClick = () => { } }) {
         </button>
 
         {user && (
-          <div className="navbar-user-actions" style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-            <div className="v-divider" style={{ width: "1px", height: "30px", background: "var(--border)", opacity: 0.6 }}></div>
-            
-            {/* The new UserAvatar component placed exactly between the divider and Logout */}
+          <div className="navbar-user-actions">
+            <div className="v-divider" />
             <UserAvatar email={user.email} />
-            
             <button
               type="button"
               className="secondary-btn logout-nav-btn"
               onClick={handleLogout}
               title="Logout"
-              style={{ padding: "8px 14px", gap: "6px" }}
             >
               🔓 <span className="hide-on-mobile">Logout</span>
             </button>
