@@ -5,7 +5,7 @@ import StatCard from "../components/StatCard";
 import RouteMapPreview from "../components/RouteMapPreview";
 
 function Dashboard() {
-  const { routeHistory, historyLoading } = useAppContext();
+  const { routeHistory, historyLoading, settings } = useAppContext();
   const navigate = useNavigate();
 
   const stats = useMemo(() => {
@@ -85,9 +85,9 @@ function Dashboard() {
           colorIdx={2}
         />
         <StatCard
-          label="Top Destination"
-          value={stats.mostUsedDestination}
-          icon="🎯"
+          label="Total Est. Cost"
+          value={`₹ ${(stats.totalDistance * (settings?.costPerKm || 10)).toFixed(0)}`}
+          icon="💰"
           colorIdx={3}
         />
       </div>

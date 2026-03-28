@@ -50,7 +50,10 @@ function StatusBadge({ status, route, onTrack, onViewCompleted }) {
   return <span className={config.className}>{config.label}</span>;
 }
 
+import { useAppContext } from "../context/AppContext";
+
 function RouteTable({ routes, onDelete, onClearAll, onTrack, onViewCompleted }) {
+  const { settings } = useAppContext();
   if (!routes || routes.length === 0) {
     return (
       <div className="empty-state">
@@ -112,7 +115,7 @@ function RouteTable({ routes, onDelete, onClearAll, onTrack, onViewCompleted }) 
                       : `${Math.floor(mins / 60)}h ${Math.round(mins % 60)}m`;
                   })()}
                 </td>
-                <td>₹ {(r.cost || 0).toFixed(2)}</td>
+                <td>₹ {((r.distance ?? r.distanceKm ?? 0) * (settings?.costPerKm || 10)).toFixed(2)}</td>
                 <td>
                   <StatusBadge
                     status={r.status}

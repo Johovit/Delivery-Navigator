@@ -16,12 +16,14 @@ import {
   clearRoutes,
 } from "../services/routeService";
 import { fetchCostPerKm, saveCostPerKm } from "../services/settingsService";
+import { useAuth } from "./AuthContext";
 
 const AppContext = createContext(null);
 
 const DEFAULT_SETTINGS = { costPerKm: 10 };
 
 export function AppProvider({ children }) {
+  const { user } = useAuth();
   const [routeHistory, setRouteHistory] = useState([]);
   const [historyLoading, setHistoryLoading] = useState(true);
   const [settings, setSettings] = useState(DEFAULT_SETTINGS);
@@ -29,23 +31,91 @@ export function AppProvider({ children }) {
   const [toasts, setToasts] = useState([]);
 
   // Ref lets updateSettings always read the latest settings without
-  // being recreated on every settings change (fixes stale closure / re-render cascade)
+  // being recreated on every settings change (fixes stale closure)
   const settingsRef = useRef(settings);
   settingsRef.current = settings;
 
+  /* ── Toast actions — defined FIRST so other callbacks can reference them ── */
+  const showToast = useCallback((message, type = "success") => {
+    const toastId = Date.now() + Math.random();
+    setToasts((prev) => [...prev, { id: toastId, message, type }]);
+    setTimeout(() => {
+      setToasts((prev) => prev.filter((t) => t.id !== toastId));
+    }, 3000);
+  }, []);
+
+  const dismissToast = useCallback((id) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  }, []);
+
   /* ── Initial load (parallel) ───────────────────────────────────── */
   useEffect(() => {
+    if (!user) {
+      setRouteHistory([]);
+      setSettings(DEFAULT_SETTINGS);
+      setHistoryLoading(false);
+      setSettingsLoading(false);
+      return;
+    }
+
     let cancelled = false;
+    setHistoryLoading(true);
+    setSettingsLoading(true);
 
     Promise.all([fetchRoutes(), fetchCostPerKm()]).then(([rows, costPerKm]) => {
       if (cancelled) return;
-      setRouteHistory(rows);
+
+      const now = Date.now();
+      const updatedRows = [...rows];
+
+      updatedRows.forEach((r) => {
+        if (r.status === "In Progress" && r.start_time && r.estimated_duration) {
+          const startMs = new Date(r.start_time).getTime();
+          const durationMs = r.estimated_duration * 60 * 1000;
+          if (now - startMs >= durationMs) {
+            r.status = "Completed";
+            r.completed_time = new Date(startMs + durationMs).toISOString();
+            updateRouteStatus(r.id, "Completed", { completed_time: r.completed_time });
+          }
+        }
+      });
+
+      setRouteHistory(updatedRows);
       setHistoryLoading(false);
       setSettings({ costPerKm });
       setSettingsLoading(false);
     });
 
     return () => { cancelled = true; };
+  }, [user]);
+
+  /* ── Auto-Complete Background Poller ───────────────────────────── */
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      setRouteHistory((currentRoutes) => {
+        let hasChanges = false;
+        const now = Date.now();
+
+        const nextRoutes = currentRoutes.map((r) => {
+          if (r.status === "In Progress" && r.start_time && r.estimated_duration) {
+            const startMs = new Date(r.start_time).getTime();
+            const durationMs = r.estimated_duration * 60 * 1000;
+
+            if (now >= startMs + durationMs) {
+              const completed_time = new Date(startMs + durationMs).toISOString();
+              updateRouteStatus(r.id, "Completed", { completed_time });
+              hasChanges = true;
+              return { ...r, status: "Completed", completed_time };
+            }
+          }
+          return r;
+        });
+
+        return hasChanges ? nextRoutes : currentRoutes;
+      });
+    }, 20000);
+
+    return () => clearInterval(intervalId);
   }, []);
 
   /* ── Route history actions ─────────────────────────────────────── */
@@ -53,7 +123,7 @@ export function AppProvider({ children }) {
     const inserted = await insertRoute(record);
     const rows = await fetchRoutes();
     setRouteHistory(rows);
-    return inserted; // Return the full row so callers can capture the id
+    return inserted;
   }, []);
 
   const deleteRouteById = useCallback(async (id) => {
@@ -67,45 +137,41 @@ export function AppProvider({ children }) {
   }, []);
 
   const updateRouteStatusById = useCallback(async (id, status, extraFields = {}) => {
-    await updateRouteStatus(id, status, extraFields);
-    setRouteHistory((prev) =>
-      prev.map((r) => (r.id === id ? { ...r, status, ...extraFields } : r))
-    );
-  }, []);
+    try {
+      await updateRouteStatus(id, status, extraFields);
+      setRouteHistory((prev) =>
+        prev.map((r) => (r.id === id ? { ...r, status, ...extraFields } : r))
+      );
+    } catch (err) {
+      showToast(err.message || "Failed to update status", "error");
+      throw err;
+    }
+  }, [showToast]);
 
   const startRouteDelivery = useCallback(async (id, startTime, estimatedDuration) => {
-    await updateRouteStart(id, startTime, estimatedDuration);
-    setRouteHistory((prev) =>
-      prev.map((r) =>
-        r.id === id
-          ? { ...r, status: "In Progress", start_time: startTime, estimated_duration: estimatedDuration }
-          : r
-      )
-    );
-  }, []);
+    try {
+      await updateRouteStart(id, startTime, estimatedDuration);
+      setRouteHistory((prev) =>
+        prev.map((r) =>
+          r.id === id
+            ? { ...r, status: "In Progress", start_time: startTime, estimated_duration: estimatedDuration }
+            : r
+        )
+      );
+    } catch (err) {
+      showToast(err.message || "Failed to start delivery", "error");
+      throw err;
+    }
+  }, [showToast]);
 
   /* ── Settings actions ──────────────────────────────────────────── */
-  // Deps array is empty — reads settings via ref to avoid stale closure
   const updateSettings = useCallback(async (partial) => {
     const next = { ...settingsRef.current, ...partial };
-    setSettings(next); // optimistic update
+    setSettings(next);
     if (partial.costPerKm !== undefined) {
       await saveCostPerKm(partial.costPerKm);
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  /* ── Toast actions ─────────────────────────────────────────────── */
-  const showToast = useCallback((message, type = "success") => {
-    const id = Date.now() + Math.random();
-    setToasts((prev) => [...prev, { id, message, type }]);
-    setTimeout(() => {
-      setToasts((prev) => prev.filter((t) => t.id !== id));
-    }, 3000);
-  }, []);
-
-  const dismissToast = useCallback((id) => {
-    setToasts((prev) => prev.filter((t) => t.id !== id));
-  }, []);
 
   /* ── Context value ─────────────────────────────────────────────── */
   const value = useMemo(

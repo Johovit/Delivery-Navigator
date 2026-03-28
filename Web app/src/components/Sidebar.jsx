@@ -105,7 +105,9 @@ function Sidebar({ isOpen = false, onClose = () => { } }) {
       </nav>
 
       {/* ── Footer branding ── */}
-      <div className="nav-sidebar-footer">Tamil Nadu Logistics © 2026</div>
+      <div className="nav-sidebar-footer">
+        {!collapsed && "Tamil Nadu Logistics © 2026"}
+      </div>
     </aside>
   );
 }

@@ -408,13 +408,18 @@ function PlanRoute() {
     if (!routes[selectedRouteIdx]) return;
     const route = routes[selectedRouteIdx];
     const startTime = new Date().toISOString();
-    const durationMinutes = route.duration_minutes;
-
-    setDeliveryStatus("In Progress");
+    const durationMinutes = Math.round(route.duration_minutes);
 
     if (currentRouteId) {
-      await startRouteDelivery(currentRouteId, startTime, durationMinutes);
+      try {
+        await startRouteDelivery(currentRouteId, startTime, durationMinutes);
+      } catch (err) {
+        // Block the frontend from continuing to "In Progress" if the update fails
+        return;
+      }
     }
+
+    setDeliveryStatus("In Progress");
 
     // Initialize live countdown
     const startMs = new Date(startTime).getTime();

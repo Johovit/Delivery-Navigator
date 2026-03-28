@@ -15,6 +15,10 @@ import PlanRoute from "./pages/PlanRoute";
 import RouteHistory from "./pages/RouteHistory";
 import Settings from "./pages/Settings";
 import ToastContainer from "./components/ToastContainer";
+import Login from "./pages/Login";
+import Signup from "./pages/Signup";
+import ProtectedRoute from "./components/ProtectedRoute";
+import { AuthProvider } from "./context/AuthContext";
 
 /* Layout wraps every authenticated page and owns the mobile-sidebar state */
 function Layout() {
@@ -57,18 +61,26 @@ function Layout() {
 function App() {
   return (
     <BrowserRouter>
-      <AppProvider>
-        <Routes>
-          <Route path="/" element={<Layout />}>
-            <Route index element={<Navigate to="dashboard" replace />} />
-            <Route path="dashboard" element={<Dashboard />} />
-            <Route path="plan" element={<PlanRoute />} />
-            <Route path="history" element={<RouteHistory />} />
-            <Route path="settings" element={<Settings />} />
-            <Route path="*" element={<Navigate to="dashboard" replace />} />
-          </Route>
-        </Routes>
-      </AppProvider>
+      <AuthProvider>
+        <AppProvider>
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            <Route path="/signup" element={<Signup />} />
+            
+            <Route path="/" element={<ProtectedRoute />}>
+              <Route element={<Layout />}>
+                <Route index element={<Navigate to="dashboard" replace />} />
+                <Route path="dashboard" element={<Dashboard />} />
+                <Route path="plan" element={<PlanRoute />} />
+                <Route path="history" element={<RouteHistory />} />
+                <Route path="settings" element={<Settings />} />
+              </Route>
+            </Route>
+            
+            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          </Routes>
+        </AppProvider>
+      </AuthProvider>
     </BrowserRouter>
   );
 }

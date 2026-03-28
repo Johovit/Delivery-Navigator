@@ -23,12 +23,15 @@ function formatDuration(mins) {
     return `${Math.floor(mins / 60)}h ${Math.round(mins % 60)}m`;
 }
 
+import { useAppContext } from "../context/AppContext";
+
 function CompletedDeliveryModal({ route, onClose }) {
+    const { settings } = useAppContext();
     if (!route) return null;
 
     const distance = (route.distance ?? 0).toFixed(2);
     const duration = formatDuration(route.duration ?? route.estimated_duration);
-    const cost = (route.cost ?? 0).toFixed(2);
+    const cost = ((route.distance ?? route.distanceKm ?? 0) * (settings?.costPerKm || 10)).toFixed(2);
     const completedAt = formatDateTime(route.completed_time);
     const startedAt = formatDateTime(route.start_time);
 
