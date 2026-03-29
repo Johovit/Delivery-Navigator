@@ -1,25 +1,28 @@
-import { Navigate, Outlet, useLocation } from "react-router-dom";
+import { Navigate, Outlet } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useAppContext } from "../context/AppContext";
 
-export default function ProtectedRoute() {
-    const { session, authLoading, roleLoading, isAdmin } = useAuth();
+export default function AdminRoute() {
+    const { session, authLoading, isAdmin, roleLoading } = useAuth();
     const { settingsLoading } = useAppContext();
-    const location = useLocation();
 
     if (authLoading || settingsLoading || roleLoading) {
         return (
             <div className="page dashboard-page">
                  <div className="empty-state compact">
                      <span className="empty-icon">⏳</span>
-                     <p>Loading user settings...</p>
+                     <p>Verifying access...</p>
                  </div>
             </div>
         );
     }
 
     if (!session) {
-        return <Navigate to="/login" replace />;
+        return <Navigate to="/admin-login" replace />;
+    }
+
+    if (!roleLoading && !authLoading && !isAdmin) {
+        return <Navigate to="/dashboard" replace />;
     }
 
     return <Outlet />;

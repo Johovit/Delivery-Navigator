@@ -31,7 +31,7 @@ const titles = {
 function Navbar({ onMenuClick = () => { } }) {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
 
   const handleLogout = async () => {
     try {
@@ -77,6 +77,7 @@ function Navbar({ onMenuClick = () => { } }) {
         {user && (
           <div className="navbar-user-actions">
             <div className="v-divider" />
+            {isAdmin && <span style={{ fontSize: "11px", fontWeight: "bold", color: "var(--color-error)", border: "1px solid var(--color-error)", padding: "2px 6px", borderRadius: "12px", background: "var(--color-error-pale)" }}>Admin</span>}
             <UserAvatar email={user.email} />
             <button
               type="button"

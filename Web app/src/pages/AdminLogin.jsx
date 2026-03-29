@@ -4,7 +4,7 @@ import { logIn, logOut } from "../services/authService";
 import { useAuth } from "../context/AuthContext";
 import { supabase } from "../lib/supabaseClient";
 
-export default function Login() {
+export default function AdminLogin() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [error, setError] = useState(null);
@@ -15,12 +15,16 @@ export default function Login() {
     const timerRef = useRef(null);
     
     const navigate = useNavigate();
-    const { session } = useAuth();
+    const { session, isAdmin, roleLoading } = useAuth();
 
-    // Redirect already-authenticated users without calling navigate() during render
+    // Redirect already-authenticated admins without calling navigate() during render
     useEffect(() => {
-        if (session) navigate("/dashboard", { replace: true });
-    }, [session, navigate]);
+        if (session && !roleLoading) {
+            if (isAdmin) {
+                navigate("/dashboard", { replace: true });
+            }
+        }
+    }, [session, isAdmin, roleLoading, navigate]);
 
     // Cleanup cooldown timer on unmount
     useEffect(() => {
@@ -53,23 +57,26 @@ export default function Login() {
         try {
             const authData = await logIn(email, password);
             const user = authData?.user || authData?.session?.user;
-
+            
             if (user) {
-                const { data } = await supabase
+                // Instantly check role before deciding to stay logged in
+                const { data, error: profileError } = await supabase
                     .from("user_profiles")
                     .select("role")
                     .eq("id", user.id)
                     .single();
                 
-                if (data?.role === "admin") {
+                if (profileError || data?.role !== "admin") {
+                    // Not an admin - sign them out immediately
                     await logOut();
-                    throw new Error("Please login through Admin Portal.");
+                    throw new Error("Access denied. This account does not have admin privileges.");
+                } else {
+                    // Is admin - redirect to dashboard
+                    navigate("/dashboard");
                 }
             }
             
-            navigate("/dashboard");
         } catch (err) {
-            
             const msg = err.message?.toLowerCase() || "";
             if (msg.includes("rate limit") || err.status === 429) {
                 setError("Too many attempts. Please try again after a few minutes.");
@@ -89,22 +96,29 @@ export default function Login() {
 
     return (
         <div className="auth-container">
-            <div className="auth-card">
+            <div className="auth-card" style={{ borderTop: "4px solid var(--color-error)" }}>
                 <div className="auth-header">
-                    <img src="/logo.svg" alt="Delivery Navigator Logo" className="auth-logo" />
-                    <h2>Welcome Back</h2>
-                    <p>Sign in to Delivery Navigator</p>
+                    <div style={{ 
+                        width: "48px", height: "48px", borderRadius: "12px", 
+                        background: "var(--color-error-pale)", color: "var(--color-error)",
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        fontSize: "24px", margin: "0 auto 16px"
+                    }}>
+                        🔐
+                    </div>
+                    <h2>Admin Portal</h2>
+                    <p>Secure access for administrators</p>
                 </div>
                 
                 {error && <div className="auth-error">{error}</div>}
                 
                 <form onSubmit={handleSubmit} className="auth-form">
                     <div className="form-group">
-                        <label htmlFor="email">Email</label>
+                        <label htmlFor="email">Admin Email</label>
                         <input
                             id="email"
                             type="email"
-                            placeholder="you@example.com"
+                            placeholder="admin@example.com"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             required
@@ -123,16 +137,18 @@ export default function Login() {
                         />
                     </div>
                     
-                    <button type="submit" className="auth-btn" disabled={loading || cooldown > 0}>
-                        {loading ? "Signing in..." : cooldown > 0 ? `Please wait ${cooldown}s` : "Sign In"}
+                    <button 
+                        type="submit" 
+                        className="auth-btn" 
+                        disabled={loading || cooldown > 0}
+                        style={{ background: "linear-gradient(135deg, var(--color-error), #B91C1C)" }}
+                    >
+                        {loading ? "Verifying..." : cooldown > 0 ? `Please wait ${cooldown}s` : "Admin Sign In"}
                     </button>
                 </form>
 
-                <div className="auth-footer">
-                    Don't have an account? <Link to="/signup">Sign up</Link>
-                    <div style={{ marginTop: "16px" }}>
-                        <Link to="/admin-login" className="link-btn" style={{ fontSize: "13px", color: "var(--text-muted)" }}>Login as Admin</Link>
-                    </div>
+                <div className="auth-footer" style={{ marginTop: "24px" }}>
+                    <Link to="/login" className="link-btn">← Back to User Login</Link>
                 </div>
             </div>
         </div>

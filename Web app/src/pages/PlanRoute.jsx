@@ -348,8 +348,8 @@ function PlanRoute() {
     if (currentRouteId) {
       try {
         await startRouteDelivery(currentRouteId, startTime, durationMinutes);
-      } catch {
-        // Block the frontend from continuing to "In Progress" if the DB update fails
+      } catch (err) {
+        showToast("Backend update failed. Have you configured RLS?", "error");
         return;
       }
     }

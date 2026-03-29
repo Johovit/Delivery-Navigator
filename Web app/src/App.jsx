@@ -18,6 +18,8 @@ import ToastContainer from "./components/ToastContainer";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import ProtectedRoute from "./components/ProtectedRoute";
+import AdminRoute from "./components/AdminRoute";
+import AdminLogin from "./pages/AdminLogin";
 import { AuthProvider } from "./context/AuthContext";
 
 /* Layout wraps every authenticated page and owns the mobile-sidebar state */
@@ -66,6 +68,7 @@ function App() {
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
+            <Route path="/admin-login" element={<AdminLogin />} />
             
             <Route path="/" element={<ProtectedRoute />}>
               <Route element={<Layout />}>
@@ -73,7 +76,10 @@ function App() {
                 <Route path="dashboard" element={<Dashboard />} />
                 <Route path="plan" element={<PlanRoute />} />
                 <Route path="history" element={<RouteHistory />} />
-                <Route path="settings" element={<Settings />} />
+                
+                <Route element={<AdminRoute />}>
+                  <Route path="settings" element={<Settings />} />
+                </Route>
               </Route>
             </Route>
             

@@ -17,6 +17,7 @@ import {
 } from "../services/routeService";
 import { fetchCostPerKm, saveCostPerKm } from "../services/settingsService";
 import { useAuth } from "./AuthContext";
+import { supabase } from "../lib/supabaseClient";
 
 const AppContext = createContext(null);
 
@@ -86,7 +87,22 @@ export function AppProvider({ children }) {
       setSettingsLoading(false);
     });
 
-    return () => { cancelled = true; };
+    const channel = supabase.channel("app_settings_watcher")
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "app_settings" },
+        (payload) => {
+          if (payload.new?.cost_per_km !== undefined) {
+            setSettings({ costPerKm: Number(payload.new.cost_per_km) });
+          }
+        }
+      )
+      .subscribe();
+
+    return () => { 
+      cancelled = true; 
+      supabase.removeChannel(channel);
+    };
   }, [user]);
 
   /* ── Auto-Complete Background Poller ───────────────────────────── */
@@ -128,6 +144,8 @@ export function AppProvider({ children }) {
       // Prepend the newly inserted row to avoid a redundant fetchRoutes() round-trip.
       // Supabase returns rows ordered newest-first, so prepending keeps the same order.
       setRouteHistory((prev) => [inserted, ...prev]);
+    } else {
+      throw new Error("Database insertion failed. Have you configured RLS or tables properly?");
     }
     return inserted;
   }, []);

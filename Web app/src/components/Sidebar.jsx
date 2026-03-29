@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { NavLink } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 const navItems = [
   { to: "/dashboard", label: "Dashboard", icon: "📊" },
@@ -26,6 +27,7 @@ const navItems = [
  *   onClose {fn}      – called when the drawer should close   (mobile only)
  */
 function Sidebar({ isOpen = false, onClose = () => { } }) {
+  const { isAdmin } = useAuth();
   /* Desktop-only collapse state */
   const [collapsed, setCollapsed] = useState(false);
 
@@ -54,6 +56,7 @@ function Sidebar({ isOpen = false, onClose = () => { } }) {
           <div className="nav-logo-text">
             <h1>Delivery Nav</h1>
             <p className="nav-subtitle">Tamil Nadu Routes</p>
+            {isAdmin && <span style={{ fontSize: "9px", background: "var(--color-error)", padding: "2px 6px", borderRadius: "10px", marginTop: "4px", display: "inline-block", fontWeight: "bold", color: "white" }}>ADMIN</span>}
           </div>
         </div>
 
@@ -86,7 +89,7 @@ function Sidebar({ isOpen = false, onClose = () => { } }) {
 
       {/* ── Navigation Links ── */}
       <nav className="nav-links">
-        {navItems.map((item) => (
+        {navItems.filter(item => item.to !== "/settings" || isAdmin).map((item) => (
           <NavLink
             key={item.to}
             to={item.to}
