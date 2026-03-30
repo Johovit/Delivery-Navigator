@@ -11,9 +11,13 @@ import { AppProvider } from "./context/AppContext";
 import Sidebar from "./components/Sidebar";
 import Navbar from "./components/Navbar";
 import Dashboard from "./pages/Dashboard";
-import PlanRoute from "./pages/PlanRoute";
-import RouteHistory from "./pages/RouteHistory";
+import CreateOrder from "./pages/CreateOrder";
+import TrackOrders from "./pages/TrackOrders";
+import UserMessages from "./pages/UserMessages";
 import Settings from "./pages/Settings";
+import AdminOrders from "./pages/admin/AdminOrders";
+import AdminInbox from "./pages/admin/AdminInbox";
+import AdminDashboard from "./pages/admin/AdminDashboard";
 import ToastContainer from "./components/ToastContainer";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
@@ -22,27 +26,17 @@ import AdminRoute from "./components/AdminRoute";
 import AdminLogin from "./pages/AdminLogin";
 import { AuthProvider } from "./context/AuthContext";
 
-/* Layout wraps every authenticated page and owns the mobile-sidebar state */
 function Layout() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-
   const openSidebar = useCallback(() => setIsSidebarOpen(true), []);
   const closeSidebar = useCallback(() => setIsSidebarOpen(false), []);
 
   return (
     <div className="layout-shell">
-      {/* Sidebar — always in the DOM; CSS drives desktop vs. mobile behaviour */}
       <Sidebar isOpen={isSidebarOpen} onClose={closeSidebar} />
-
-      {/* Semi-transparent overlay — visible only on mobile when drawer is open */}
       {isSidebarOpen && (
-        <div
-          className="sidebar-overlay"
-          onClick={closeSidebar}
-          aria-hidden="true"
-        />
+        <div className="sidebar-overlay" onClick={closeSidebar} aria-hidden="true" />
       )}
-
       <div className="layout-main">
         <Navbar onMenuClick={openSidebar} />
         <main className="layout-content">
@@ -50,9 +44,7 @@ function Layout() {
         </main>
         <footer className="app-footer">
           <span>Delivery Navigator · Smart routing across Tamil Nadu</span>
-          <span className="footer-tagline">
-            Designed for Tamil Nadu logistics and delivery operations
-          </span>
+          <span className="footer-tagline">Designed for Tamil Nadu logistics and delivery operations</span>
         </footer>
         <ToastContainer />
       </div>
@@ -69,20 +61,30 @@ function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
             <Route path="/admin-login" element={<AdminLogin />} />
-            
+
+            {/* All authenticated routes share the Layout shell */}
             <Route path="/" element={<ProtectedRoute />}>
               <Route element={<Layout />}>
                 <Route index element={<Navigate to="dashboard" replace />} />
+
+                {/* User routes */}
                 <Route path="dashboard" element={<Dashboard />} />
-                <Route path="plan" element={<PlanRoute />} />
-                <Route path="history" element={<RouteHistory />} />
-                
+                <Route path="create-order" element={<CreateOrder />} />
+                <Route path="track-orders" element={<TrackOrders />} />
+                <Route path="messages" element={<UserMessages />} />
+
+                {/* Admin-only routes */}
                 <Route element={<AdminRoute />}>
-                  <Route path="settings" element={<Settings />} />
+                  <Route path="admin/dashboard" element={<AdminDashboard />} />
+                  <Route path="admin/orders" element={<AdminOrders />} />
+                  <Route path="admin/inbox" element={<AdminInbox />} />
                 </Route>
+
+                {/* Shared routes */}
+                <Route path="settings" element={<Settings />} />
               </Route>
             </Route>
-            
+
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Routes>
         </AppProvider>

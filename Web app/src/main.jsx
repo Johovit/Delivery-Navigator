@@ -1,5 +1,6 @@
 import { createRoot } from 'react-dom/client'
 import './index.css'
+import './orders.css'
 import App from './App.jsx'
 import "leaflet/dist/leaflet.css";
 

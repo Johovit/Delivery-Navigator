@@ -8,13 +8,12 @@ import {
   useState,
 } from "react";
 import {
-  fetchRoutes,
-  insertRoute,
-  updateRouteStatus,
-  updateRouteStart,
-  deleteRoute,
-  clearRoutes,
-} from "../services/routeService";
+  fetchOrders,
+  insertOrder,
+  updateOrderStatus,
+  deleteOrder,
+  clearOrders,
+} from "../services/orderService";
 import { fetchCostPerKm, saveCostPerKm } from "../services/settingsService";
 import { useAuth } from "./AuthContext";
 import { supabase } from "../lib/supabaseClient";
@@ -25,8 +24,8 @@ const DEFAULT_SETTINGS = { costPerKm: 10 };
 
 export function AppProvider({ children }) {
   const { user } = useAuth();
-  const [routeHistory, setRouteHistory] = useState([]);
-  const [historyLoading, setHistoryLoading] = useState(true);
+  const [orders, setOrders] = useState([]);
+  const [ordersLoading, setOrdersLoading] = useState(true);
   const [settings, setSettings] = useState(DEFAULT_SETTINGS);
   const [settingsLoading, setSettingsLoading] = useState(true);
   const [toasts, setToasts] = useState([]);
@@ -52,37 +51,24 @@ export function AppProvider({ children }) {
   /* ── Initial load (parallel) ───────────────────────────────────── */
   useEffect(() => {
     if (!user) {
-      setRouteHistory([]);
+      setOrders([]);
       setSettings(DEFAULT_SETTINGS);
-      setHistoryLoading(false);
+      setOrdersLoading(false);
       setSettingsLoading(false);
       return;
     }
 
     let cancelled = false;
-    setHistoryLoading(true);
+    setOrdersLoading(true);
     setSettingsLoading(true);
 
-    Promise.all([fetchRoutes(), fetchCostPerKm()]).then(([rows, costPerKm]) => {
+    Promise.all([fetchOrders(), fetchCostPerKm()]).then(([rows, costPerKm]) => {
       if (cancelled) return;
 
-      const now = Date.now();
-      const updatedRows = [...rows];
+      const updatedRows = runLifecycleCheck([...rows]);
 
-      updatedRows.forEach((r) => {
-        if (r.status === "In Progress" && r.start_time && r.estimated_duration) {
-          const startMs = new Date(r.start_time).getTime();
-          const durationMs = r.estimated_duration * 60 * 1000;
-          if (now - startMs >= durationMs) {
-            r.status = "Completed";
-            r.completed_time = new Date(startMs + durationMs).toISOString();
-            updateRouteStatus(r.id, "Completed", { completed_time: r.completed_time });
-          }
-        }
-      });
-
-      setRouteHistory(updatedRows);
-      setHistoryLoading(false);
+      setOrders(updatedRows);
+      setOrdersLoading(false);
       setSettings({ costPerKm });
       setSettingsLoading(false);
     });
@@ -99,71 +85,104 @@ export function AppProvider({ children }) {
       )
       .subscribe();
 
-    return () => { 
-      cancelled = true; 
+    // ── Auto-lifecycle check ──────────────────────────────────────
+    // Runs on load, then every 30 seconds.
+    // planned → in_progress when pickup_time <= now
+    // in_progress → completed when delivery_time <= now
+    const runLifecycleCheck = (currentOrders) => {
+      const now = Date.now();
+      currentOrders.forEach((r) => {
+        if (r.status === "planned" && r.pickup_time) {
+          const pickupMs = new Date(r.pickup_time).getTime();
+          if (now >= pickupMs) {
+            // Calculate new delivery_time based on estimated duration
+            const durationMins = r.estimated_duration_minutes || 30;
+            const deliveryTime = new Date(now + durationMins * 60 * 1000).toISOString();
+            r.status = "in_progress";
+            r.pickup_time = new Date(now).toISOString();
+            r.delivery_time = deliveryTime;
+            updateOrderStatus(r.id, "in_progress", {
+              pickup_time: r.pickup_time,
+              delivery_time: deliveryTime,
+            });
+          }
+        }
+        if (r.status === "in_progress" && r.delivery_time) {
+          const deliveryMs = new Date(r.delivery_time).getTime();
+          if (now >= deliveryMs) {
+            r.status = "completed";
+            updateOrderStatus(r.id, "completed");
+          }
+        }
+      });
+      return [...currentOrders];
+    };
+
+    return () => {
+      cancelled = true;
       supabase.removeChannel(channel);
     };
   }, [user]);
 
-  /* ── Auto-Complete Background Poller ───────────────────────────── */
+  // ── Periodic lifecycle check every 30s ───────────────────────────
   useEffect(() => {
-    // Don't run the poller when nobody is logged in
-    if (!user) return;
-
-    const intervalId = setInterval(() => {
-      setRouteHistory((currentRoutes) => {
-        let hasChanges = false;
+    const interval = setInterval(() => {
+      setOrders((prev) => {
         const now = Date.now();
-
-        const nextRoutes = currentRoutes.map((r) => {
-          if (r.status === "In Progress" && r.start_time && r.estimated_duration) {
-            const startMs = new Date(r.start_time).getTime();
-            const durationMs = r.estimated_duration * 60 * 1000;
-
-            if (now >= startMs + durationMs) {
-              const completed_time = new Date(startMs + durationMs).toISOString();
-              updateRouteStatus(r.id, "Completed", { completed_time });
-              hasChanges = true;
-              return { ...r, status: "Completed", completed_time };
+        let changed = false;
+        const updated = prev.map((r) => {
+          const copy = { ...r };
+          if (copy.status === "planned" && copy.pickup_time) {
+            if (now >= new Date(copy.pickup_time).getTime()) {
+              const durationMins = copy.estimated_duration_minutes || 30;
+              const deliveryTime = new Date(now + durationMins * 60 * 1000).toISOString();
+              copy.status = "in_progress";
+              copy.pickup_time = new Date(now).toISOString();
+              copy.delivery_time = deliveryTime;
+              updateOrderStatus(copy.id, "in_progress", { pickup_time: copy.pickup_time, delivery_time: deliveryTime });
+              changed = true;
             }
           }
-          return r;
+          if (copy.status === "in_progress" && copy.delivery_time) {
+            if (now >= new Date(copy.delivery_time).getTime()) {
+              copy.status = "completed";
+              updateOrderStatus(copy.id, "completed");
+              changed = true;
+            }
+          }
+          return copy;
         });
-
-        return hasChanges ? nextRoutes : currentRoutes;
+        return changed ? updated : prev;
       });
-    }, 20000);
-
-    return () => clearInterval(intervalId);
-  }, [user]);
+    }, 30000); // every 30 seconds
+    return () => clearInterval(interval);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   /* ── Route history actions ─────────────────────────────────────── */
-  const addRouteRecord = useCallback(async (record) => {
-    const inserted = await insertRoute(record);
+  const addOrder = useCallback(async (record) => {
+    const inserted = await insertOrder(record);
     if (inserted) {
-      // Prepend the newly inserted row to avoid a redundant fetchRoutes() round-trip.
-      // Supabase returns rows ordered newest-first, so prepending keeps the same order.
-      setRouteHistory((prev) => [inserted, ...prev]);
+      setOrders((prev) => [inserted, ...prev]);
     } else {
       throw new Error("Database insertion failed. Have you configured RLS or tables properly?");
     }
     return inserted;
   }, []);
 
-  const deleteRouteById = useCallback(async (id) => {
-    await deleteRoute(id);
-    setRouteHistory((prev) => prev.filter((r) => r.id !== id));
+  const deleteOrderById = useCallback(async (id) => {
+    await deleteOrder(id);
+    setOrders((prev) => prev.filter((r) => r.id !== id));
   }, []);
 
-  const clearAllRoutes = useCallback(async () => {
-    await clearRoutes();
-    setRouteHistory([]);
+  const clearAllOrders = useCallback(async () => {
+    await clearOrders();
+    setOrders([]);
   }, []);
 
-  const updateRouteStatusById = useCallback(async (id, status, extraFields = {}) => {
+  const updateOrderStatusById = useCallback(async (id, status, extraFields = {}) => {
     try {
-      await updateRouteStatus(id, status, extraFields);
-      setRouteHistory((prev) =>
+      await updateOrderStatus(id, status, extraFields);
+      setOrders((prev) =>
         prev.map((r) => (r.id === id ? { ...r, status, ...extraFields } : r))
       );
     } catch (err) {
@@ -172,13 +191,21 @@ export function AppProvider({ children }) {
     }
   }, [showToast]);
 
-  const startRouteDelivery = useCallback(async (id, startTime, estimatedDuration) => {
+  const startOrderDelivery = useCallback(async (id, estimatedDurationMinutes) => {
     try {
-      await updateRouteStart(id, startTime, estimatedDuration);
-      setRouteHistory((prev) =>
+      const startTime = new Date().toISOString();
+      // Use the stored estimated_duration_minutes from the order, fallback to 30 min
+      const durationMins = estimatedDurationMinutes || 30;
+      const deliveryTime = new Date(Date.now() + durationMins * 60 * 1000).toISOString();
+
+      await updateOrderStatus(id, "in_progress", {
+        pickup_time: startTime,
+        delivery_time: deliveryTime,
+      });
+      setOrders((prev) =>
         prev.map((r) =>
           r.id === id
-            ? { ...r, status: "In Progress", start_time: startTime, estimated_duration: estimatedDuration }
+            ? { ...r, status: "in_progress", pickup_time: startTime, delivery_time: deliveryTime }
             : r
         )
       );
@@ -200,13 +227,13 @@ export function AppProvider({ children }) {
   /* ── Context value ─────────────────────────────────────────────── */
   const value = useMemo(
     () => ({
-      routeHistory,
-      historyLoading,
-      addRouteRecord,
-      deleteRouteById,
-      clearAllRoutes,
-      updateRouteStatusById,
-      startRouteDelivery,
+      orders,
+      ordersLoading,
+      addOrder,
+      deleteOrderById,
+      clearAllOrders,
+      updateOrderStatusById,
+      startOrderDelivery,
       settings,
       settingsLoading,
       updateSettings,
@@ -215,13 +242,13 @@ export function AppProvider({ children }) {
       dismissToast,
     }),
     [
-      routeHistory,
-      historyLoading,
-      addRouteRecord,
-      deleteRouteById,
-      clearAllRoutes,
-      updateRouteStatusById,
-      startRouteDelivery,
+      orders,
+      ordersLoading,
+      addOrder,
+      deleteOrderById,
+      clearAllOrders,
+      updateOrderStatusById,
+      startOrderDelivery,
       settings,
       settingsLoading,
       updateSettings,
