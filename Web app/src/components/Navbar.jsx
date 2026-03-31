@@ -31,7 +31,7 @@ function Navbar({ onMenuClick = () => {} }) {
         aria-label="Open navigation menu"
         title="Open menu"
       >
-        ☰
+        Menu
       </button>
 
       <div className="top-navbar-left">
@@ -48,7 +48,8 @@ function Navbar({ onMenuClick = () => {} }) {
               className="accent-btn"
               onClick={() => navigate("/create-order")}
             >
-              📦 <span className="hide-on-mobile">Create Order</span>
+              <span className="hide-on-mobile">Create Order</span>
+              <span className="show-on-mobile">Create</span>
             </button>
             <button
               type="button"
@@ -56,7 +57,8 @@ function Navbar({ onMenuClick = () => {} }) {
               onClick={() => navigate("/track-orders")}
               style={{ marginLeft: "8px" }}
             >
-              🚚 <span className="hide-on-mobile">Track Orders</span>
+              <span className="hide-on-mobile">Track Orders</span>
+              <span className="show-on-mobile">Track</span>
             </button>
           </>
         )}
@@ -67,7 +69,8 @@ function Navbar({ onMenuClick = () => {} }) {
             className="accent-btn"
             onClick={() => navigate("/admin/orders")}
           >
-            📋 <span className="hide-on-mobile">Manage Orders</span>
+            <span className="hide-on-mobile">Manage Orders</span>
+            <span className="show-on-mobile">Orders</span>
           </button>
         )}
 
@@ -81,7 +84,7 @@ function Navbar({ onMenuClick = () => {} }) {
                 borderRadius: "12px", background: "var(--color-error-pale)"
               }}>Admin</span>
             )}
-            <UserAvatar email={user.email} />
+            <UserAvatar email={user.email} onClick={() => navigate("/settings")} />
           </div>
         )}
       </div>

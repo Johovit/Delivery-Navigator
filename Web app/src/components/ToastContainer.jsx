@@ -1,13 +1,5 @@
 import { useAppContext } from "../context/AppContext";
 
-/* Icon per toast type */
-const ICONS = {
-  success: "✅",
-  info: "ℹ️",
-  error: "❌",
-  warning: "⚠️",
-};
-
 function ToastContainer() {
   const { toasts, dismissToast } = useAppContext();
 
@@ -23,8 +15,7 @@ function ToastContainer() {
           role="alert"
           aria-live="polite"
         >
-          <span className="toast-icon">{ICONS[toast.type] || ICONS.success}</span>
-          <span>{toast.message}</span>
+          <span className="toast-message">{toast.message}</span>
         </div>
       ))}
     </div>

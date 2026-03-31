@@ -4,18 +4,18 @@ import { useAuth } from "../context/AuthContext";
 import { logOut } from "../services/authService";
 
 const userNavItems = [
-  { to: "/dashboard", label: "Dashboard", icon: "📊" },
-  { to: "/create-order", label: "Create Order", icon: "📦" },
-  { to: "/track-orders", label: "Track Orders", icon: "🚚" },
-  { to: "/messages", label: "My Queries", icon: "💬" },
-  { to: "/settings", label: "Settings", icon: "⚙️" },
+  { to: "/dashboard", label: "Dashboard" },
+  { to: "/create-order", label: "Create Order" },
+  { to: "/track-orders", label: "Track Orders" },
+  { to: "/messages", label: "Support" },
+  { to: "/settings", label: "Settings" },
 ];
 
 const adminNavItems = [
-  { to: "/admin/dashboard", label: "Dashboard", icon: "📊" },
-  { to: "/admin/orders", label: "All Orders", icon: "📋" },
-  { to: "/admin/inbox", label: "Inbox", icon: "📨" },
-  { to: "/settings", label: "Settings", icon: "⚙️" },
+  { to: "/admin/dashboard", label: "Dashboard" },
+  { to: "/admin/orders", label: "All Orders" },
+  { to: "/admin/inbox", label: "Inbox" },
+  { to: "/settings", label: "Settings" },
 ];
 
 function Sidebar({ isOpen = false, onClose = () => {} }) {
@@ -79,7 +79,7 @@ function Sidebar({ isOpen = false, onClose = () => {} }) {
             aria-label="Close menu"
             title="Close menu"
           >
-            ✕
+            Close
           </button>
         </div>
       </div>
@@ -94,7 +94,6 @@ function Sidebar({ isOpen = false, onClose = () => {} }) {
             title={collapsed ? item.label : undefined}
             onClick={onClose}
           >
-            <span className="nav-icon">{item.icon}</span>
             <span className="nav-label">{item.label}</span>
           </NavLink>
         ))}
@@ -121,7 +120,7 @@ function Sidebar({ isOpen = false, onClose = () => {} }) {
               onClick={handleLogout}
               title="Logout"
             >
-              🔓 Logout
+              Logout
             </button>
           </>
         )}

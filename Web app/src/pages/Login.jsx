@@ -19,7 +19,7 @@ export default function Login() {
 
     // Redirect already-authenticated users without calling navigate() during render
     useEffect(() => {
-        if (session) navigate("/dashboard", { replace: true });
+        if (session) navigate("/", { replace: true });
     }, [session, navigate]);
 
     // Cleanup cooldown timer on unmount
@@ -57,13 +57,24 @@ export default function Login() {
             if (user) {
                 const { data } = await supabase
                     .from("user_profiles")
-                    .select("role")
+                    .select("role, username")
                     .eq("id", user.id)
                     .single();
                 
                 if (data?.role === "admin") {
                     await logOut();
                     throw new Error("Please login through Admin Portal.");
+                }
+
+                if (!data || !data.username) {
+                    const username = email.split('@')[0];
+                    await supabase.from("user_profiles").upsert({
+                        id: user.id,
+                        email: email,
+                        username: username,
+                        role: data?.role || 'user',
+                        updated_at: new Date().toISOString()
+                    }, { onConflict: 'id' });
                 }
             }
             

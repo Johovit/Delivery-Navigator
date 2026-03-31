@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { fetchUserMessages, sendUserMessage } from "../services/messageService";
 import { useAppContext } from "../context/AppContext";
+import EmptyState from "../components/EmptyState";
 
 function UserMessages() {
   const { showToast } = useAppContext();
@@ -67,7 +68,7 @@ function UserMessages() {
           <p className="page-sub">Chat with our support team</p>
         </div>
         <button className="secondary-btn" onClick={loadMessages} disabled={loading}>
-          🔄 Refresh
+          Refresh
         </button>
       </div>
 
@@ -75,10 +76,11 @@ function UserMessages() {
         <div className="chat-messages">
           {loading && <div className="inbox-loading">Loading your messages...</div>}
           {!loading && messages.length === 0 && (
-            <div className="empty-state">
-              <span>👋</span>
-              <p>Hi there! How can we help you today?</p>
-            </div>
+            <EmptyState
+              variant="messages"
+              title="No messages yet"
+              message="Start a conversation with our support team."
+            />
           )}
           {!loading &&
             messages.map((msg) => {

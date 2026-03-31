@@ -249,15 +249,6 @@
   border-bottom: 2px solid var(--color-accent);
 }
 
-.nav-icon {
-  width: 22px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 16px;
-  flex-shrink: 0;
-}
-
 /* Label fades + slides out when collapsed */
 .nav-label {
   white-space: nowrap;
@@ -861,7 +852,7 @@
 }
 
 .suggestions-list li::before {
-  content: '📍';
+  content: '•';
   font-size: 12px;
   opacity: 0.6;
 }
@@ -1332,6 +1323,28 @@
   display: block;
 }
 
+.empty-illustration {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: var(--space-4);
+}
+
+.empty-title {
+  font-size: var(--font-md);
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.empty-sub {
+  margin: var(--space-2) 0 0 0;
+}
+
+.empty-action {
+  margin-top: var(--space-4);
+}
+
 .empty-state p {
   color: var(--text-secondary);
   font-size: var(--font-base);
@@ -1348,6 +1361,59 @@
 /* ===============================
    Settings
 ================================ */
+
+/* ===============================
+   Global Form Controls
+================================ */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+input[type="datetime-local"],
+input[type="date"],
+select,
+textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  border: 1.5px solid var(--border, #e5e7eb);
+  background: var(--bg-surface, #fff);
+  color: var(--text-primary, #111827);
+  font-size: var(--font-base, 14px);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast),
+    background-color var(--transition-fast);
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  border-color: var(--border-focus, #2563eb);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--text-muted, #9ca3af);
+}
+
+select {
+  appearance: none;
+}
+
+@media (max-width: 640px) {
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="number"],
+  input[type="datetime-local"],
+  input[type="date"],
+  select,
+  textarea {
+    padding: 10px 10px;
+  }
+}
+
 .settings-form {
   max-width: 560px;
   background: var(--bg-surface);
@@ -1477,11 +1543,6 @@
 
 .toast-error {
   border-left-color: var(--color-error);
-}
-
-.toast-icon {
-  font-size: 16px;
-  flex-shrink: 0;
 }
 
 /* ===============================
@@ -2461,9 +2522,17 @@ button.status-badge.completed.clickable:active {
   display: inline;
 }
 
+.show-on-mobile {
+  display: none;
+}
+
 @media (max-width: 640px) {
   .hide-on-mobile {
     display: none;
+  }
+
+  .show-on-mobile {
+    display: inline;
   }
 }
 
@@ -2554,6 +2623,12 @@ button.status-badge.completed.clickable:active {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.inbox-last-msg-time {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 2px;
 }
 
 .inbox-chat-area {

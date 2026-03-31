@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { signUp } from "../services/authService";
 import { useAuth } from "../context/AuthContext";
+import { supabase } from "../lib/supabaseClient";
 
 export default function Signup() {
     const [email, setEmail] = useState("");
@@ -65,10 +66,22 @@ export default function Signup() {
         setLoading(true);
 
         try {
-            const data = await signUp(email, password);
+            const payload = await signUp(email, password);
+            const user = payload?.user;
             
+            if (user) {
+                const username = email.split('@')[0];
+                await supabase.from('user_profiles').upsert({
+                    id: user.id,
+                    email: email,
+                    username: username,
+                    role: 'user',
+                    updated_at: new Date().toISOString()
+                }, { onConflict: 'id' });
+            }
+
             // If Supabase returns a session, email confirmation is disabled. We can auto-login!
-            if (data?.session) {
+            if (payload?.session) {
                 setMessage("Account created successfully! Logging you in...");
                 setTimeout(() => navigate("/dashboard"), 1500);
             } else {

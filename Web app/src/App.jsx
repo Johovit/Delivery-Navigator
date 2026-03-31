@@ -23,8 +23,15 @@ import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AdminRoute from "./components/AdminRoute";
+import UserRoute from "./components/UserRoute";
 import AdminLogin from "./pages/AdminLogin";
-import { AuthProvider } from "./context/AuthContext";
+import { AuthProvider, useAuth } from "./context/AuthContext";
+
+function RootRedirect() {
+  const { isAdmin, authLoading, roleLoading } = useAuth();
+  if (authLoading || roleLoading) return null;
+  return <Navigate to={isAdmin ? "admin/dashboard" : "dashboard"} replace />;
+}
 
 function Layout() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -65,13 +72,14 @@ function App() {
             {/* All authenticated routes share the Layout shell */}
             <Route path="/" element={<ProtectedRoute />}>
               <Route element={<Layout />}>
-                <Route index element={<Navigate to="dashboard" replace />} />
+                <Route index element={<RootRedirect />} />
 
                 {/* User routes */}
-                <Route path="dashboard" element={<Dashboard />} />
-                <Route path="create-order" element={<CreateOrder />} />
-                <Route path="track-orders" element={<TrackOrders />} />
-                <Route path="messages" element={<UserMessages />} />
+                <Route element={<UserRoute />}>
+                  <Route path="dashboard" element={<Dashboard />} />
+                  <Route path="create-order" element={<CreateOrder />} />
+                  <Route path="messages" element={<UserMessages />} />
+                </Route>
 
                 {/* Admin-only routes */}
                 <Route element={<AdminRoute />}>
@@ -80,12 +88,13 @@ function App() {
                   <Route path="admin/inbox" element={<AdminInbox />} />
                 </Route>
 
-                {/* Shared routes */}
+                {/* Shared routes (accessible by both user and admin) */}
+                <Route path="track-orders" element={<TrackOrders />} />
                 <Route path="settings" element={<Settings />} />
               </Route>
             </Route>
 
-            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+            <Route path="*" element={<RootRedirect />} />
           </Routes>
         </AppProvider>
       </AuthProvider>

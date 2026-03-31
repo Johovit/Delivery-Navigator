@@ -35,33 +35,80 @@ function safeParseGeometry(geometry) {
  * Works because Admin RLS policy allows admins to read all rows.
  */
 export async function fetchAllOrdersAdmin({ status, dateFrom, dateTo } = {}) {
-    let query = supabase
-        .from("orders")
-        .select("*, user_profiles(id, email)")
-        .order("created_at", { ascending: false });
+    const query = applyAdminFilters(buildAdminOrdersQuery("*"), { status, dateFrom, dateTo });
 
+    const { data: orders, error } = await query;
+    if (error) {
+        console.error("Failed to fetch admin orders:", error.message);
+        return [];
+    }
+
+    // Manual mapping avoids dependency on Supabase relationship metadata.
+    const userIds = [...new Set((orders || []).map((o) => normalizeId(o.user_id)).filter(Boolean))];
+    const profilesMap = await fetchProfilesByIds(userIds);
+
+    return (orders || []).map((order) => ({
+        ...order,
+        geometry: safeParseGeometry(order.geometry),
+        user_profiles: profilesMap[normalizeId(order.user_id)] || null,
+    }));
+}
+
+function buildAdminOrdersQuery(selectClause) {
+    return supabase
+        .from("orders")
+        .select(selectClause)
+        .order("created_at", { ascending: false });
+}
+
+function applyAdminFilters(query, { status, dateFrom, dateTo }) {
+    let filteredQuery = query;
     if (status && status !== "all") {
-        query = query.eq("status", status);
+        filteredQuery = filteredQuery.eq("status", status);
     }
     if (dateFrom) {
-        query = query.gte("created_at", dateFrom);
+        filteredQuery = filteredQuery.gte("created_at", dateFrom);
     }
     if (dateTo) {
-        query = query.lte("created_at", dateTo);
+        filteredQuery = filteredQuery.lte("created_at", dateTo);
     }
+    return filteredQuery;
+}
 
-    const { data, error } = await query;
+async function fetchProfilesByIds(userIds) {
+    if (!userIds.length) return {};
+
+    // Email may not exist on `user_profiles` in all environments; try username-only safely.
+    const { data: profiles, error } = await supabase
+        .from("user_profiles")
+        .select("id, username, email")
+        .in("id", userIds);
+
     if (error) {
-        // Fallback: fetch without join if user_profiles causes issues
-        console.warn("Admin order fetch with profile join failed, trying without join:", error.message);
-        const { data: fallback, error: fbErr } = await supabase
-            .from("orders")
-            .select("*")
-            .order("created_at", { ascending: false });
-        if (fbErr) { console.error(fbErr); return []; }
-        return fallback ?? [];
+        console.error("Failed to fetch user_profiles (id, username, email):", error.message);
+        const { data: profiles2, error: err2 } = await supabase
+            .from("user_profiles")
+            .select("id, username")
+            .in("id", userIds);
+        if (err2 || !profiles2) {
+            console.error("Failed to fetch user_profiles (id, username):", err2?.message || err2);
+            return {};
+        }
+        return profiles2.reduce((acc, p) => {
+            acc[normalizeId(p.id)] = p;
+            return acc;
+        }, {});
     }
-    return data ?? [];
+    if (!profiles) return {};
+
+    return profiles.reduce((acc, profile) => {
+        acc[normalizeId(profile.id)] = profile;
+        return acc;
+    }, {});
+}
+
+function normalizeId(value) {
+    return String(value || "").trim().toLowerCase();
 }
 
 /** Insert a new order record — returns the inserted row (with generated id) */

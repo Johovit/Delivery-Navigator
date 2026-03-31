@@ -20,7 +20,6 @@ const getMinPickupTime = () => {
 // Props are stable primitive/callback values; no object identity issues.
 function CityInput({
   label,
-  emoji,
   query,
   onQuery,
   citySelected,
@@ -38,7 +37,7 @@ function CityInput({
       {/* City search */}
       <div className="input-group" style={{ position: "relative" }}>
         <label>
-          {emoji} {label} City <span className="required-star">*</span>
+          {label} City <span className="required-star">*</span>
         </label>
         <input
           type="text"
@@ -49,7 +48,7 @@ function CityInput({
           className={citySelected ? "input-valid" : ""}
         />
         {citySelected && (
-          <span className="input-badge input-badge--ok">✓ Tamil Nadu</span>
+          <span className="input-badge input-badge--ok">Tamil Nadu</span>
         )}
         {/* Dropdown */}
         {suggestions.length > 0 && !citySelected && (
@@ -65,12 +64,12 @@ function CityInput({
         {/* No match warning */}
         {query.length >= 2 && !citySelected && suggestions.length === 0 && (
           <p className="field-hint error">
-            ⚠️ Only Tamil Nadu cities allowed. Type "Chennai", "Madurai" etc.
+            Only Tamil Nadu cities allowed. Type "Chennai", "Madurai" etc.
           </p>
         )}
         {/* Same city warning */}
         {citySelected && otherCityName && citySelected === otherCityName && (
-          <p className="field-hint error">⚠️ Pickup and delivery city must differ.</p>
+          <p className="field-hint error">Pickup and delivery city must differ.</p>
         )}
       </div>
 
@@ -88,8 +87,8 @@ function CityInput({
           maxLength={6}
           className={pincodeError ? "input-error" : pincodeOk ? "input-valid" : ""}
         />
-        {pincodeError && <p className="field-hint error">⚠️ {pincodeError}</p>}
-        {!pincodeError && pincodeOk && <p className="field-hint ok">✓ Valid pincode</p>}
+        {pincodeError && <p className="field-hint error">{pincodeError}</p>}
+        {!pincodeError && pincodeOk && <p className="field-hint ok">Valid pincode</p>}
       </div>
     </div>
   );
@@ -100,18 +99,18 @@ function PaymentSuccessModal({ amount, pickup, delivery, onClose }) {
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="payment-success-modal" onClick={(e) => e.stopPropagation()}>
-        <div className="payment-success-icon">✅</div>
+        <div className="payment-success-icon">Done</div>
         <h2>Payment Successful!</h2>
         <p className="payment-success-amount">₹{Number(amount).toFixed(2)} paid</p>
         <div className="payment-success-details">
-          <p>📦 Order placed successfully</p>
-          <p>🟢 {pickup} → 🔴 {delivery}</p>
+          <p>Order placed successfully</p>
+          <p>{pickup} to {delivery}</p>
           <p style={{ color: "var(--text-muted)", fontSize: "13px", marginTop: "8px" }}>
             Your order is now <strong>Planned</strong>. It will start automatically at pickup time.
           </p>
         </div>
         <button className="primary-btn" style={{ width: "100%", marginTop: "20px" }} onClick={onClose}>
-          View My Orders 🚚
+          View My Orders
         </button>
       </div>
     </div>
@@ -336,7 +335,7 @@ export default function CreateOrder() {
             key={label}
             className={`step ${currentStep > idx + 1 ? "completed" : ""} ${currentStep === idx + 1 ? "active" : ""}`}
           >
-            <div className="step-circle">{currentStep > idx + 1 ? "✓" : idx + 1}</div>
+            <div className="step-circle">{currentStep > idx + 1 ? "Done" : idx + 1}</div>
             <span className="step-label">{label}</span>
           </div>
         ))}
@@ -345,12 +344,11 @@ export default function CreateOrder() {
       {/* ── STEP 1 ── */}
       {currentStep === 1 && (
         <div className="form-card slide-in">
-          <h2>📍 Delivery Locations</h2>
+          <h2>Delivery Locations</h2>
           <p className="form-subtitle">Only Tamil Nadu cities are supported. Start typing to see suggestions.</p>
 
           <CityInput
             label="Pickup"
-            emoji="🟢"
             query={pickupQuery}
             onQuery={handlePickupQuery}
             citySelected={pickupCity?.city}
@@ -362,11 +360,10 @@ export default function CreateOrder() {
             pincodeError={pincodeErrors.pickup}
           />
 
-          <div className="city-divider">↕</div>
+          <div className="city-divider">to</div>
 
           <CityInput
             label="Delivery"
-            emoji="🔴"
             query={deliveryQuery}
             onQuery={handleDeliveryQuery}
             citySelected={deliveryCity?.city}
@@ -383,7 +380,7 @@ export default function CreateOrder() {
             onClick={() => { if (validatePincodes()) setCurrentStep(2); }}
             disabled={!canProceedStep1}
           >
-            Next: Package Details ➔
+            Next: Package Details
           </button>
         </div>
       )}
@@ -391,7 +388,7 @@ export default function CreateOrder() {
       {/* ── STEP 2 ── */}
       {currentStep === 2 && (
         <div className="form-card slide-in">
-          <h2>📦 Package Details</h2>
+          <h2>Package Details</h2>
 
           <div className="input-group">
             <label>Package Type</label>
@@ -429,17 +426,17 @@ export default function CreateOrder() {
               placeholder="e.g. Electronic items, fragile — handle with care"
               className={descError ? "input-error" : ""}
             />
-            {descError && <p className="field-hint error">⚠️ {descError}</p>}
+            {descError && <p className="field-hint error">{descError}</p>}
           </div>
 
           <div className="form-actions">
-            <button className="secondary-btn" onClick={() => setCurrentStep(1)}>← Back</button>
+            <button className="secondary-btn" onClick={() => setCurrentStep(1)}>Back</button>
             <button
               className="accent-btn"
               onClick={() => { if (validateStep2() && parseFloat(weight) > 0) setCurrentStep(3); else if (parseFloat(weight) <= 0 || !weight) showToast("Please enter a valid weight", "error"); }}
               disabled={!weight}
             >
-              Next: Schedule ➔
+              Next: Schedule
             </button>
           </div>
         </div>
@@ -448,7 +445,7 @@ export default function CreateOrder() {
       {/* ── STEP 3 ── */}
       {currentStep === 3 && (
         <div className="form-card slide-in">
-          <h2>🗓️ Schedule Pickup</h2>
+          <h2>Schedule Pickup</h2>
 
           <div className="input-group">
             <label>
@@ -464,13 +461,13 @@ export default function CreateOrder() {
               onChange={(e) => { setPickupTime(e.target.value); setTimeError(""); }}
               className={timeError ? "input-error" : ""}
             />
-            {timeError && <p className="field-hint error">⚠️ {timeError}</p>}
+            {timeError && <p className="field-hint error">{timeError}</p>}
           </div>
 
           {/* Route preview */}
           <div className="route-preview-box">
-            <p><strong>🟢 Pickup:</strong> {pickupCity?.city} — {pickupPincode}</p>
-            <p><strong>🔴 Delivery:</strong> {deliveryCity?.city} — {deliveryPincode}</p>
+            <p><strong>Pickup:</strong> {pickupCity?.city} — {pickupPincode}</p>
+            <p><strong>Delivery:</strong> {deliveryCity?.city} — {deliveryPincode}</p>
             <p className="route-preview-hint">Route will be fetched via OSRM road routing</p>
           </div>
 
@@ -479,9 +476,9 @@ export default function CreateOrder() {
           )}
 
           <div className="form-actions">
-            <button className="secondary-btn" onClick={() => setCurrentStep(2)}>← Back</button>
+            <button className="secondary-btn" onClick={() => setCurrentStep(2)}>Back</button>
             <button className="accent-btn" onClick={calculateRoute} disabled={!pickupTime || routeLoading}>
-              {routeLoading ? "⏳ Fetching Route…" : "🗺️ Calculate Route & Summary ➔"}
+              {routeLoading ? "Fetching route..." : "Calculate Route and Summary"}
             </button>
           </div>
         </div>
@@ -490,22 +487,22 @@ export default function CreateOrder() {
       {/* ── STEP 4 ── */}
       {currentStep === 4 && routeInfo && (
         <div className="form-card slide-in">
-          <h2>📋 Order Summary</h2>
+          <h2>Order Summary</h2>
           <div className="summary-grid">
             <div className="summary-details">
               <div className="summary-items-grid">
                 {[
-                  { icon: "🟢", label: "Pickup",    value: `${pickupCity.city}\n${pickupPincode}` },
-                  { icon: "🔴", label: "Delivery",  value: `${deliveryCity.city}\n${deliveryPincode}` },
-                  { icon: "📏", label: "Distance",  value: `${routeInfo.distanceKm.toFixed(1)} km (road)` },
-                  { icon: "⏱️", label: "Duration",  value: formatDuration(Math.round(routeInfo.durationMinutes)) },
-                  { icon: "📦", label: "Package",   value: `${packageType} · ${weight} kg` },
-                  { icon: "📝", label: "Contents",  value: description },
-                  { icon: "🕐", label: "Pickup At", value: new Date(pickupTime).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" }) },
-                  { icon: "🚚", label: "Est. Delivery", value: new Date(routeInfo.estimatedDeliveryTime).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" }) },
-                ].map(({ icon, label, value }) => (
+                  { label: "Pickup",    value: `${pickupCity.city}\n${pickupPincode}` },
+                  { label: "Delivery",  value: `${deliveryCity.city}\n${deliveryPincode}` },
+                  { label: "Distance",  value: `${routeInfo.distanceKm.toFixed(1)} km (road)` },
+                  { label: "Duration",  value: formatDuration(Math.round(routeInfo.durationMinutes)) },
+                  { label: "Package",   value: `${packageType} · ${weight} kg` },
+                  { label: "Contents",  value: description },
+                  { label: "Pickup At", value: new Date(pickupTime).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" }) },
+                  { label: "Est. Delivery", value: new Date(routeInfo.estimatedDeliveryTime).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" }) },
+                ].map(({ label, value }) => (
                   <div key={label} className="summary-item">
-                    <span className="summary-item-label">{icon} {label}</span>
+                    <span className="summary-item-label">{label}</span>
                     <p className="summary-item-value">{value}</p>
                   </div>
                 ))}
@@ -519,14 +516,14 @@ export default function CreateOrder() {
             </div>
 
             <div>
-              <p className="map-label">🗺️ Real Road Route (OSRM)</p>
+              <p className="map-label">Road Route (OSRM)</p>
               <div id="summary-map" className="summary-map-box" />
             </div>
           </div>
 
           <div className="form-actions">
-            <button className="secondary-btn" onClick={() => setCurrentStep(3)}>← Back</button>
-            <button className="accent-btn" onClick={() => setCurrentStep(5)}>Proceed to Payment 💳</button>
+            <button className="secondary-btn" onClick={() => setCurrentStep(3)}>Back</button>
+            <button className="accent-btn" onClick={() => setCurrentStep(5)}>Proceed to Payment</button>
           </div>
         </div>
       )}
@@ -534,23 +531,22 @@ export default function CreateOrder() {
       {/* ── STEP 5 ── */}
       {currentStep === 5 && (
         <div className="form-card slide-in">
-          <h2>💳 Payment</h2>
+          <h2>Payment</h2>
           <div className="payment-header">
             <p className="payment-label">Amount to pay</p>
             <p className="payment-amount">₹{routeInfo?.cost.toFixed(2)}</p>
-            <p className="payment-route">{pickupCity?.city} → {deliveryCity?.city} · {routeInfo?.distanceKm.toFixed(1)} km</p>
+            <p className="payment-route">{pickupCity?.city} to {deliveryCity?.city} · {routeInfo?.distanceKm.toFixed(1)} km</p>
           </div>
 
           <div className="payment-options">
             {[
-              { value: "UPI",        icon: "📱", label: "UPI",                        sub: "GPay · PhonePe · Paytm" },
-              { value: "Card",       icon: "💳", label: "Credit / Debit Card",         sub: "Visa · Mastercard · RuPay" },
-              { value: "NetBanking", icon: "🏦", label: "Net Banking",                 sub: "All major Indian banks" },
-              { value: "COD",        icon: "💵", label: "Cash on Delivery",            sub: "Pay when you receive" },
-            ].map(({ value, icon, label, sub }) => (
+              { value: "UPI", label: "UPI",                sub: "GPay · PhonePe · Paytm" },
+              { value: "Card", label: "Credit / Debit Card", sub: "Visa · Mastercard · RuPay" },
+              { value: "NetBanking", label: "Net Banking",   sub: "All major Indian banks" },
+              { value: "COD", label: "Cash on Delivery",      sub: "Pay when you receive" },
+            ].map(({ value, label, sub }) => (
               <label key={value} className={`payment-option ${paymentMethod === value ? "selected" : ""}`}>
                 <input type="radio" name="payment" value={value} checked={paymentMethod === value} onChange={() => setPaymentMethod(value)} />
-                <span className="payment-icon">{icon}</span>
                 <div>
                   <p className="payment-option-label">{label}</p>
                   <p className="payment-option-sub">{sub}</p>
@@ -560,9 +556,9 @@ export default function CreateOrder() {
           </div>
 
           <div className="form-actions">
-            <button className="secondary-btn" onClick={() => setCurrentStep(4)} disabled={isSubmitting}>← Back</button>
+            <button className="secondary-btn" onClick={() => setCurrentStep(4)} disabled={isSubmitting}>Back</button>
             <button className="primary-btn" onClick={handleConfirmOrder} disabled={!paymentMethod || isSubmitting} style={{ minWidth: "180px" }}>
-              {isSubmitting ? "⏳ Placing Order…" : "✅ Confirm & Pay"}
+              {isSubmitting ? "Placing order..." : "Confirm and Pay"}
             </button>
           </div>
         </div>

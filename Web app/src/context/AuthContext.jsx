@@ -6,6 +6,7 @@ const AuthContext = createContext({
     user: null,
     authLoading: true,
     role: "user",
+    username: null,
     roleLoading: false,
     isAdmin: false,
 });
@@ -15,6 +16,7 @@ export function AuthProvider({ children }) {
     const [user, setUser] = useState(null);
     const [authLoading, setAuthLoading] = useState(true);
     const [role, setRole] = useState("user");
+    const [username, setUsername] = useState(null);
     const [roleLoading, setRoleLoading] = useState(false);
 
     useEffect(() => {
@@ -40,6 +42,7 @@ export function AuthProvider({ children }) {
     useEffect(() => {
         if (!user) {
             setRole("user");
+            setUsername(null);
             setRoleLoading(false);
             return;
         }
@@ -51,22 +54,25 @@ export function AuthProvider({ children }) {
             try {
                 const { data, error } = await supabase
                     .from("user_profiles")
-                    .select("role")
+                    .select("role, username")
                     .eq("id", user.id)
                     .single();
                 
                 if (isMounted) {
                     if (error) {
-                        console.error("Error fetching user role:", error);
+                        console.error("Error fetching user profile:", error);
                         setRole("user"); // Fallback
+                        setUsername(null);
                     } else {
                         setRole(data?.role || "user");
+                        setUsername(data?.username || null);
                     }
                 }
             } catch (err) {
                 if (isMounted) {
-                    console.error("Failed to fetch role:", err);
+                    console.error("Failed to fetch profile:", err);
                     setRole("user");
+                    setUsername(null);
                 }
             } finally {
                 if (isMounted) setRoleLoading(false);
@@ -81,7 +87,7 @@ export function AuthProvider({ children }) {
     const isAdmin = role === "admin";
 
     return (
-        <AuthContext.Provider value={{ session, user, authLoading, role, roleLoading, isAdmin }}>
+        <AuthContext.Provider value={{ session, user, authLoading, role, username, roleLoading, isAdmin }}>
             {!authLoading && children}
         </AuthContext.Provider>
     );

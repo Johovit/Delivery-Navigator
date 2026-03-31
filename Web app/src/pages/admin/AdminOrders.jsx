@@ -1,6 +1,10 @@
 import { useState, useEffect, useCallback } from "react";
 import { fetchAllOrdersAdmin, updateOrderStatus } from "../../services/orderService";
 import { useAppContext } from "../../context/AppContext";
+import DeliveryTrackingModal from "../../components/DeliveryTrackingModal";
+import OrderReceiptModal from "../../components/OrderReceiptModal";
+import EmptyState from "../../components/EmptyState";
+import "./AdminOrders.css";
 
 const STATUS_OPTIONS = [
   { value: "all",         label: "All" },
@@ -10,16 +14,32 @@ const STATUS_OPTIONS = [
 ];
 
 const STATUS_COLORS = {
-  planned:     "#d97706",
-  in_progress: "#0ea5e9",
+  planned:     "#6b7280",
+  in_progress: "#2563eb",
   completed:   "#16a34a",
 };
 
-// Extract readable username from email
 function getUsername(order) {
-  const email = order.user_profiles?.email || "";
-  if (email) return email.split("@")[0];
-  return order.user_id?.slice(0, 8) + "…";
+  const profile = order.user_profiles || order.profiles;
+  return (
+    profile?.username ||
+    profile?.email?.split("@")[0] ||
+    "Unknown"
+  );
+}
+
+function toTrackingShape(order) {
+  return {
+    id: order.id,
+    source: order.pickup_address,
+    destination: order.delivery_address,
+    distance: Number(order.distance_km || 0),
+    estimated_duration: Number(order.estimated_duration_minutes || 30),
+    start_time: order.pickup_time,
+    geometry: order.geometry,
+    status: order.status,
+    cost: Number(order.cost || 0),
+  };
 }
 
 function AdminOrders() {
@@ -30,6 +50,8 @@ function AdminOrders() {
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [updatingId, setUpdatingId] = useState(null);
+  const [trackingOrder, setTrackingOrder] = useState(null);
+  const [receiptOrder, setReceiptOrder] = useState(null);
 
   const loadOrders = useCallback(async () => {
     setLoading(true);
@@ -46,19 +68,65 @@ function AdminOrders() {
     loadOrders();
   }, [loadOrders]);
 
-  const handleStatusChange = async (orderId, newStatus) => {
+  const handleCancelStatus = async (orderId) => {
     setUpdatingId(orderId);
     try {
-      await updateOrderStatus(orderId, newStatus);
+      await updateOrderStatus(orderId, "cancelled");
       setOrders((prev) =>
-        prev.map((o) => (o.id === orderId ? { ...o, status: newStatus } : o))
+        prev.map((o) => (o.id === orderId ? { ...o, status: "cancelled" } : o))
       );
-      showToast(`Order status updated to "${newStatus}"`, "success");
+      showToast('Order marked as "cancelled"', "success");
     } catch (err) {
-      showToast(err.message || "Failed to update status", "error");
+      showToast(err?.message || "Failed to cancel order", "error");
     } finally {
       setUpdatingId(null);
     }
+  };
+
+  const handleCompleteOrder = async (order) => {
+    if (!window.confirm("Mark this order as completed?")) return;
+    setUpdatingId(order.id);
+    try {
+      await updateOrderStatus(order.id, "completed");
+      setOrders((prev) =>
+        prev.map((o) => (o.id === order.id ? { ...o, status: "completed" } : o))
+      );
+      showToast('Order marked as "completed"', "success");
+
+      // Stop tracking (if open) and show receipt
+      if (trackingOrder?.id === order.id) setTrackingOrder(null);
+      setReceiptOrder({ ...order, status: "completed" });
+    } catch (err) {
+      showToast(err?.message || "Failed to complete order", "error");
+    } finally {
+      setUpdatingId(null);
+    }
+  };
+
+  const handleCancelOrder = async (order) => {
+    if (!window.confirm("Are you sure you want to cancel this order?")) return;
+    await handleCancelStatus(order.id);
+
+    if (trackingOrder?.id === order.id) setTrackingOrder(null);
+    setReceiptOrder({ ...order, status: "cancelled" });
+  };
+
+  const handleTrackOrder = (order) => {
+    // Only track live when in progress.
+    if (order.status !== "in_progress") {
+      if (order.status === "completed" || order.status === "cancelled") {
+        setReceiptOrder(order);
+        return;
+      }
+      showToast("Tracking is only available when an order is in progress.", "error");
+      return;
+    }
+    const trackData = toTrackingShape(order);
+    if (!trackData.geometry || trackData.geometry.length < 2) {
+      showToast("Route geometry not available for this order.", "error");
+      return;
+    }
+    setTrackingOrder(trackData);
   };
 
   const formatDate = (iso) => {
@@ -67,12 +135,6 @@ function AdminOrders() {
       dateStyle: "medium",
       timeStyle: "short",
     });
-  };
-
-  const nextStatus = (current) => {
-    if (current === "planned") return "in_progress";
-    if (current === "in_progress") return "completed";
-    return null;
   };
 
   return (
@@ -85,7 +147,7 @@ function AdminOrders() {
           </p>
         </div>
         <button className="secondary-btn" onClick={loadOrders} disabled={loading}>
-          🔄 Refresh
+          Refresh
         </button>
       </div>
 
@@ -136,66 +198,95 @@ function AdminOrders() {
 
       {/* Orders Table */}
       {loading ? (
-        <div className="empty-state"><span>⏳</span><p>Loading orders…</p></div>
+        <div className="empty-state"><p>Loading orders…</p></div>
       ) : orders.length === 0 ? (
-        <div className="empty-state"><span>📭</span><p>No orders found for these filters.</p></div>
+        <EmptyState
+          variant="orders"
+          title="No orders found"
+          message="No orders match the selected filters."
+        />
       ) : (
         <div className="admin-orders-table-wrap">
           <table className="admin-table">
             <thead>
               <tr>
-                <th>User</th>
-                <th>Pickup</th>
-                <th>Delivery</th>
-                <th>Type</th>
+                <th>Username</th>
+                <th>Pickup Location</th>
+                <th>Delivery Location</th>
+                <th>Package Type</th>
+                <th>Description</th>
                 <th>Distance</th>
                 <th>Cost</th>
-                <th>Date</th>
                 <th>Status</th>
-                <th>Action</th>
+                <th>Pickup Time</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
               {orders.map((order) => {
-                const next = nextStatus(order.status);
                 const username = getUsername(order);
+                const isCancelled = order.status === "cancelled";
+                const isCompleted = order.status === "completed";
+                const isFinal = isCancelled || isCompleted;
                 return (
-                  <tr key={order.id}>
+                  <tr key={order.id} className={isCancelled ? "row-cancelled" : ""}>
                     <td>
-                      <span className="user-id-cell" title={order.user_profiles?.email || order.user_id}>
-                        <span className="admin-user-avatar" style={{ marginRight: "6px" }}>
-                          {username.charAt(0).toUpperCase()}
-                        </span>
-                        {username}
-                      </span>
+                      <div
+                        className="admin-user-cell"
+                        title={order.user_profiles?.email || order.user_id}
+                      >
+                        <div className="admin-user-avatar-sm">{username.charAt(0).toUpperCase()}</div>
+                        <span style={{ fontWeight: 600 }}>{username}</span>
+                      </div>
                     </td>
-                    <td>{order.pickup_address} <span className="pincode-tag">{order.pickup_pincode}</span></td>
-                    <td>{order.delivery_address} <span className="pincode-tag">{order.delivery_pincode}</span></td>
+                    <td>{order.pickup_address || "—"}</td>
+                    <td>{order.delivery_address || "—"}</td>
                     <td>{order.package_type || "—"}</td>
+                    <td style={{ maxWidth: "150px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} title={order.description}>
+                      {order.description || "—"}
+                    </td>
                     <td>{order.distance_km ? `${Number(order.distance_km).toFixed(1)} km` : "—"}</td>
-                    <td>{order.cost ? `₹${Number(order.cost).toFixed(2)}` : "—"}</td>
-                    <td className="date-cell">{formatDate(order.created_at)}</td>
+                    <td style={{ fontWeight: 600 }}>{order.cost ? `₹${Number(order.cost).toFixed(2)}` : "—"}</td>
                     <td>
                       <span
-                        className="status-badge"
-                        style={{ background: STATUS_COLORS[order.status] || "#9ca3af" }}
+                        className={`status-badge status-${order.status || "unknown"}`}
+                        style={{ background: isCancelled ? "#ef4444" : (STATUS_COLORS[order.status] || "#9ca3af") }}
                       >
                         {(order.status || "unknown").replace("_", " ").toUpperCase()}
                       </span>
                     </td>
+                    <td className="date-cell">
+                      {order.pickup_time ? formatDate(order.pickup_time) : "—"}
+                    </td>
                     <td>
-                      {next ? (
+                      <div className="admin-table-actions">
                         <button
-                          className="accent-btn"
-                          style={{ fontSize: "12px", padding: "6px 12px" }}
-                          onClick={() => handleStatusChange(order.id, next)}
-                          disabled={updatingId === order.id}
+                          className="action-track"
+                          onClick={() => handleTrackOrder(order)}
+                          disabled={updatingId === order.id || order.status !== "in_progress"}
                         >
-                          {updatingId === order.id ? "…" : `→ ${next.replace("_", " ")}`}
+                          Track
                         </button>
-                      ) : (
-                        <span style={{ color: "var(--text-muted)", fontSize: "12px" }}>✓ Done</span>
-                      )}
+                        
+                        <button
+                          className="action-complete"
+                          onClick={() => handleCompleteOrder(order)}
+                          disabled={isFinal || updatingId === order.id}
+                          title={isFinal ? "Order already completed/cancelled" : "Mark order as completed"}
+                        >
+                          Complete
+                        </button>
+
+                        {!isCancelled && (
+                          <button
+                            className="action-cancel"
+                            onClick={() => handleCancelOrder(order)}
+                            disabled={isFinal || updatingId === order.id}
+                          >
+                            Cancel
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 );
@@ -203,6 +294,24 @@ function AdminOrders() {
             </tbody>
           </table>
         </div>
+      )}
+
+      {trackingOrder && (
+        <DeliveryTrackingModal
+          route={trackingOrder}
+          onClose={() => setTrackingOrder(null)}
+          onDeliveryComplete={(id) => {
+            const target = orders.find((o) => o.id === id);
+            if (target) handleCompleteOrder(target);
+          }}
+        />
+      )}
+
+      {receiptOrder && (
+        <OrderReceiptModal
+          order={receiptOrder}
+          onClose={() => setReceiptOrder(null)}
+        />
       )}
     </div>
   );

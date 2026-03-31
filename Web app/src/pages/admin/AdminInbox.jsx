@@ -5,6 +5,7 @@ import {
   sendAdminReply,
 } from "../../services/messageService";
 import { useAppContext } from "../../context/AppContext";
+import EmptyState from "../../components/EmptyState";
 
 function AdminInbox() {
   const { showToast } = useAppContext();
@@ -94,7 +95,7 @@ function AdminInbox() {
           <p className="page-sub">Manage user conversations</p>
         </div>
         <button className="secondary-btn" onClick={loadInbox} disabled={loadingList}>
-          🔄 Refresh Inbox
+          Refresh
         </button>
       </div>
 
@@ -104,34 +105,47 @@ function AdminInbox() {
           {loadingList ? (
             <div className="inbox-loading">Loading users...</div>
           ) : inboxList.length === 0 ? (
-            <div className="empty-state">
-              <p>No messages found.</p>
-            </div>
+            <EmptyState
+              variant="inbox"
+              title="No conversations"
+              message="When users send messages, conversations will appear here."
+              compact
+            />
           ) : (
             <ul className="inbox-user-list">
-              {inboxList.map((conver) => (
-                <li
-                  key={conver.conversation_user_id}
-                  className={`inbox-user-item ${
-                    selectedUser === conver.conversation_user_id ? "active" : ""
-                  }`}
-                  onClick={() => setSelectedUser(conver.conversation_user_id)}
-                >
-                  <div className="inbox-user-avatar">
-                    {conver.conversation_user_id.slice(0, 2).toUpperCase()}
-                  </div>
-                  <div className="inbox-user-info">
-                    <span className="inbox-user-id" title={conver.conversation_user_id}>
-                      {conver.conversation_user_id.slice(0, 8)}...
-                    </span>
-                    <span className="inbox-last-msg">
-                      {conver.message.length > 30
-                        ? conver.message.slice(0, 30) + "..."
-                        : conver.message}
-                    </span>
-                  </div>
-                </li>
-              ))}
+              {inboxList.map((conver) => {
+                const profile = conver.user_profiles || {};
+                const username =
+                  profile?.username ||
+                  profile?.email?.split("@")[0] ||
+                  "Unknown";
+                return (
+                  <li
+                    key={conver.conversation_user_id}
+                    className={`inbox-user-item ${
+                      selectedUser === conver.conversation_user_id ? "active" : ""
+                    }`}
+                    onClick={() => setSelectedUser(conver.conversation_user_id)}
+                  >
+                    <div className="inbox-user-avatar">
+                      {String(username).charAt(0).toUpperCase()}
+                    </div>
+                    <div className="inbox-user-info">
+                      <span className="inbox-user-id" title={conver.conversation_user_id}>
+                        {username}
+                      </span>
+                      <span className="inbox-last-msg">
+                        {conver.message.length > 30
+                          ? conver.message.slice(0, 30) + "..."
+                          : conver.message}
+                      </span>
+                      <span className="inbox-last-msg-time">
+                        {formatDate(conver.created_at)}
+                      </span>
+                    </div>
+                  </li>
+                );
+              })}
             </ul>
           )}
         </div>
@@ -141,13 +155,18 @@ function AdminInbox() {
           {selectedUser ? (
             <div className="chat-window">
               <div className="chat-header">
-                <h4>Conversation with {selectedUser.slice(0, 8)}...</h4>
+                <h4>Conversation</h4>
               </div>
 
               <div className="chat-messages">
                 {loadingChat && <div className="inbox-loading">Loading messages...</div>}
                 {!loadingChat && messages.length === 0 && (
-                  <div className="empty-state">No messages yet.</div>
+                  <EmptyState
+                    variant="messages"
+                    title="No messages yet"
+                    message="Select a conversation to view messages."
+                    compact
+                  />
                 )}
                 {!loadingChat &&
                   messages.map((msg) => {
@@ -189,10 +208,12 @@ function AdminInbox() {
               </form>
             </div>
           ) : (
-            <div className="empty-state chat-empty">
-              <span>💬</span>
-              <p>Select a user to view the conversation</p>
-            </div>
+            <EmptyState
+              variant="messages"
+              title="Select a conversation"
+              message="Choose a user from the left to view and reply to messages."
+              compact
+            />
           )}
         </div>
       </div>

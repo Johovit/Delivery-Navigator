@@ -21,7 +21,7 @@ export default function AdminLogin() {
     useEffect(() => {
         if (session && !roleLoading) {
             if (isAdmin) {
-                navigate("/dashboard", { replace: true });
+                navigate("/admin/dashboard", { replace: true });
             }
         }
     }, [session, isAdmin, roleLoading, navigate]);
@@ -62,7 +62,7 @@ export default function AdminLogin() {
                 // Instantly check role before deciding to stay logged in
                 const { data, error: profileError } = await supabase
                     .from("user_profiles")
-                    .select("role")
+                    .select("role, username")
                     .eq("id", user.id)
                     .single();
                 
@@ -70,10 +70,21 @@ export default function AdminLogin() {
                     // Not an admin - sign them out immediately
                     await logOut();
                     throw new Error("Access denied. This account does not have admin privileges.");
-                } else {
-                    // Is admin - redirect to dashboard
-                    navigate("/dashboard");
                 }
+
+                if (!data || !data.username) {
+                    const username = email.split('@')[0];
+                    await supabase.from("user_profiles").upsert({
+                        id: user.id,
+                        email: email,
+                        username: username,
+                        role: data?.role || 'admin',
+                        updated_at: new Date().toISOString()
+                    }, { onConflict: 'id' });
+                }
+
+                // Is admin - redirect to dashboard
+                navigate("/admin/dashboard");
             }
             
         } catch (err) {
@@ -104,7 +115,7 @@ export default function AdminLogin() {
                         display: "flex", alignItems: "center", justifyContent: "center",
                         fontSize: "24px", margin: "0 auto 16px"
                     }}>
-                        🔐
+                        Admin
                     </div>
                     <h2>Admin Portal</h2>
                     <p>Secure access for administrators</p>
@@ -148,7 +159,7 @@ export default function AdminLogin() {
                 </form>
 
                 <div className="auth-footer" style={{ marginTop: "24px" }}>
-                    <Link to="/login" className="link-btn">← Back to User Login</Link>
+                    <Link to="/login" className="link-btn">Back to User Login</Link>
                 </div>
             </div>
         </div>

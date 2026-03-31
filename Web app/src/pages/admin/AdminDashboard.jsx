@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { fetchAllOrdersAdmin } from "../../services/orderService";
 import { useAppContext } from "../../context/AppContext";
+import EmptyState from "../../components/EmptyState";
 
 function AdminDashboard() {
   const { showToast } = useAppContext();
@@ -31,9 +32,8 @@ function AdminDashboard() {
   };
 
   const getUserLabel = (order) => {
-    const email = order.user_profiles?.email || "";
-    if (email) return email.split("@")[0];
-    return order.user_id?.slice(0, 8) + "…";
+    const profile = order.user_profiles || order.profiles;
+    return profile?.username || profile?.email?.split("@")[0] || "Unknown";
   };
 
   const STATUS_COLORS = {
@@ -43,10 +43,10 @@ function AdminDashboard() {
   };
 
   const statCards = [
-    { icon: "📋", label: "Total Orders", value: stats.total, color: "var(--color-primary-pale)", textColor: "var(--color-primary)" },
-    { icon: "🕐", label: "Planned", value: stats.planned, color: "var(--color-warning-pale)", textColor: "var(--color-warning)" },
-    { icon: "🚚", label: "In Progress", value: stats.in_progress, color: "var(--color-info-pale)", textColor: "var(--color-info)" },
-    { icon: "✅", label: "Completed", value: stats.completed, color: "var(--color-success-pale)", textColor: "var(--color-success)" },
+    { label: "Total Orders", value: stats.total, color: "var(--color-primary-pale)", textColor: "var(--color-primary)" },
+    { label: "Planned", value: stats.planned, color: "var(--color-warning-pale)", textColor: "var(--color-warning)" },
+    { label: "In Progress", value: stats.in_progress, color: "var(--color-info-pale)", textColor: "var(--color-info)" },
+    { label: "Completed", value: stats.completed, color: "var(--color-success-pale)", textColor: "var(--color-success)" },
   ];
 
   return (
@@ -57,19 +57,18 @@ function AdminDashboard() {
           <p className="page-sub">Overview of all delivery operations</p>
         </div>
         <button className="secondary-btn" onClick={loadStats} disabled={loading}>
-          🔄 Refresh
+          Refresh
         </button>
       </div>
 
       {/* Stats Grid */}
       <div className="admin-stats-grid">
-        {statCards.map(({ icon, label, value, color, textColor }) => (
+        {statCards.map(({ label, value, color, textColor }) => (
           <div
             key={label}
             className="admin-stat-card"
             style={{ background: color, borderColor: textColor + "33" }}
           >
-            <span className="admin-stat-icon" style={{ fontSize: "2rem" }}>{icon}</span>
             <div>
               <p className="admin-stat-label">{label}</p>
               <p className="admin-stat-value" style={{ color: textColor }}>
@@ -85,14 +84,18 @@ function AdminDashboard() {
         <div className="card-header">
           <h3>Recent Orders</h3>
           <a href="/admin/orders" style={{ color: "var(--color-primary-mid)", fontSize: "13px", fontWeight: 600 }}>
-            View All →
+            View All
           </a>
         </div>
 
         {loading ? (
           <div className="empty-state"><p>Loading…</p></div>
         ) : recentOrders.length === 0 ? (
-          <div className="empty-state"><span>📭</span><p>No orders yet.</p></div>
+          <EmptyState
+            variant="orders"
+            title="No orders yet"
+            message="Once customers place orders, they'll appear here."
+          />
         ) : (
           <div className="admin-recent-list">
             {recentOrders.map((order) => (
@@ -102,7 +105,7 @@ function AdminDashboard() {
                   <div>
                     <p className="admin-recent-name">{getUserLabel(order)}</p>
                     <p className="admin-recent-route">
-                      {order.pickup_address} → {order.delivery_address}
+                      {order.pickup_address} to {order.delivery_address}
                     </p>
                   </div>
                 </div>

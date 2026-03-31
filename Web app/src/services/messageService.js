@@ -50,15 +50,27 @@ export async function sendUserMessage(messageText) {
  * Returns unique conversation_user_ids with their most recent message date.
  */
 export async function fetchAdminInboxList() {
-    const { data, error } = await supabase
+    const { data: messages, error } = await supabase
         .from("messages")
         .select("conversation_user_id, created_at, message")
         .order("created_at", { ascending: false });
 
     if (error) {
-        console.error("Failed to fetch admin inbox:", error);
+        console.error("Failed to fetch admin inbox:", error.message);
         return [];
     }
+
+    const deduped = deduplicateInbox(messages || []);
+    const userIds = [...new Set(deduped.map((r) => normalizeId(r.conversation_user_id)).filter(Boolean))];
+    const profilesMap = await fetchProfilesByIds(userIds);
+
+    return deduped.map((r) => ({
+        ...r,
+        user_profiles: profilesMap[normalizeId(r.conversation_user_id)] || null,
+    }));
+}
+
+function deduplicateInbox(data) {
 
     // Deduplicate by conversation_user_id — keep the most recent item per user
     const seenUsers = new Map();
@@ -110,4 +122,40 @@ export async function sendAdminReply(conversationUserId, messageText) {
         throw error;
     }
     return data;
+}
+
+async function fetchProfilesByIds(userIds) {
+    if (!userIds.length) return {};
+
+    const { data: profiles, error } = await supabase
+        .from("user_profiles")
+        .select("id, username, email")
+        .in("id", userIds);
+
+    if (error) {
+        console.error("Failed to fetch user_profiles (id, username, email):", error.message);
+        const { data: profiles2, error: err2 } = await supabase
+            .from("user_profiles")
+            .select("id, username")
+            .in("id", userIds);
+        if (err2 || !profiles2) {
+            console.error("Failed to fetch user_profiles (id, username):", err2?.message || err2);
+            return {};
+        }
+        return profiles2.reduce((acc, p) => {
+            acc[normalizeId(p.id)] = p;
+            return acc;
+        }, {});
+    }
+
+    if (!profiles) return {};
+
+    return profiles.reduce((acc, p) => {
+        acc[normalizeId(p.id)] = p;
+        return acc;
+    }, {});
+}
+
+function normalizeId(value) {
+    return String(value || "").trim().toLowerCase();
 }

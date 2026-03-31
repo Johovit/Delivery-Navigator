@@ -1,10 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAppContext } from "../context/AppContext";
 
 function Dashboard() {
   const navigate = useNavigate();
-  const { user } = useAppContext ? useAppContext() : {};
   const [pickupPincode, setPickupPincode] = useState("");
   const [deliveryPincode, setDeliveryPincode] = useState("");
 
@@ -28,21 +26,21 @@ function Dashboard() {
           
           <div className="landing-features">
             <div className="feature-item">
-              <span className="feature-icon">⚡</span>
+              <span className="feature-icon" aria-hidden="true">•</span>
               <div className="feature-text">
                 <h4>Lightning Fast</h4>
                 <p>Same-day and next-day options</p>
               </div>
             </div>
             <div className="feature-item">
-              <span className="feature-icon">🛡️</span>
+              <span className="feature-icon" aria-hidden="true">•</span>
               <div className="feature-text">
                 <h4>Fully Secure</h4>
                 <p>Real-time tracking & insured packages</p>
               </div>
             </div>
             <div className="feature-item">
-              <span className="feature-icon">💰</span>
+              <span className="feature-icon" aria-hidden="true">•</span>
               <div className="feature-text">
                 <h4>Best Rates</h4>
                 <p>Transparent pricing with no hidden fees</p>
@@ -84,7 +82,7 @@ function Dashboard() {
               onClick={handleBookNow}
               disabled={!pickupPincode || !deliveryPincode}
             >
-              🚀 Book Now
+              Book Now
             </button>
           </div>
         </div>

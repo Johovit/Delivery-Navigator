@@ -53,6 +53,9 @@ function DeliveryTrackingModal({ route, onClose, onDeliveryComplete }) {
   useEffect(() => {
     if (!route || !mapContainerRef.current) return;
 
+    // If the order is not actively in progress, do not animate tracking.
+    const isTrackable = route.status === "in_progress";
+
     // Ensure no stale leaflet instance on the container
     const container = mapContainerRef.current;
     if (container._leaflet_id != null) {
@@ -98,7 +101,7 @@ function DeliveryTrackingModal({ route, onClose, onDeliveryComplete }) {
       const initProgress = computeProgress();
       const initPos = interpolateAlongRoute(geometry, initProgress);
       const lorryIcon = L.divIcon({
-        html: `<div class="delivery-icon">🚚</div>`,
+        html: `<div class="delivery-icon">•</div>`,
         className: "",
         iconSize: [36, 36],
         iconAnchor: [18, 18],
@@ -109,20 +112,30 @@ function DeliveryTrackingModal({ route, onClose, onDeliveryComplete }) {
       setProgress(initProgress);
       setRemainingMs(computeRemainingMs());
 
-      // Tick every second to update lorry position and countdown
-      intervalRef.current = setInterval(() => {
-        const p = computeProgress();
-        const pos = interpolateAlongRoute(geometry, p);
-        if (lorryMarkerRef.current) lorryMarkerRef.current.setLatLng(pos);
-        setProgress(p);
-        setRemainingMs(computeRemainingMs());
-        if (p >= 1) {
-          clearInterval(intervalRef.current);
-          if (typeof onDeliveryComplete === "function") {
-            onDeliveryComplete(route.id);
+      if (isTrackable) {
+        // Tick every second to update lorry position and countdown
+        intervalRef.current = setInterval(() => {
+          // Stop immediately if status is completed/cancelled while modal is open
+          if (route.status === "completed" || route.status === "cancelled") {
+            clearInterval(intervalRef.current);
+            return;
           }
-        }
-      }, 1000);
+          const p = computeProgress();
+          const pos = interpolateAlongRoute(geometry, p);
+          if (lorryMarkerRef.current) lorryMarkerRef.current.setLatLng(pos);
+          setProgress(p);
+          setRemainingMs(computeRemainingMs());
+          if (p >= 1) {
+            clearInterval(intervalRef.current);
+            if (typeof onDeliveryComplete === "function") {
+              onDeliveryComplete(route.id);
+            }
+          }
+        }, 1000);
+      } else {
+        // Non-trackable states should never animate
+        clearInterval(intervalRef.current);
+      }
     }
 
     // Invalidate after mount so tiles load correctly
@@ -137,6 +150,14 @@ function DeliveryTrackingModal({ route, onClose, onDeliveryComplete }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [route]);
 
+  // Stop movement if status changes to completed/cancelled
+  useEffect(() => {
+    if (!route) return;
+    if (route.status === "completed" || route.status === "cancelled") {
+      clearInterval(intervalRef.current);
+    }
+  }, [route?.status]);
+
   if (!route) return null;
 
   const totalDuration = route.estimated_duration ?? route.duration ?? 0;
@@ -148,16 +169,15 @@ function DeliveryTrackingModal({ route, onClose, onDeliveryComplete }) {
         {/* Header */}
         <div className="tracking-modal-header">
           <div className="tracking-modal-title">
-            <span className="tracking-icon">🚚</span>
             <div>
               <h2>Live Delivery Tracking</h2>
               <p className="tracking-route-label">
-                {route.source} → {route.destination}
+                {route.source} to {route.destination}
               </p>
             </div>
           </div>
           <button className="tracking-close-btn" onClick={onClose} aria-label="Close tracking">
-            ✕
+            Close
           </button>
         </div>
 
@@ -169,21 +189,18 @@ function DeliveryTrackingModal({ route, onClose, onDeliveryComplete }) {
           {/* Stats row */}
           <div className="tracking-stats-row">
             <div className="tracking-stat">
-              <span className="tracking-stat-icon">📍</span>
               <div>
                 <span className="tracking-stat-label">Source</span>
                 <span className="tracking-stat-value">{route.source}</span>
               </div>
             </div>
             <div className="tracking-stat">
-              <span className="tracking-stat-icon">🏁</span>
               <div>
                 <span className="tracking-stat-label">Destination</span>
                 <span className="tracking-stat-value">{route.destination}</span>
               </div>
             </div>
             <div className="tracking-stat">
-              <span className="tracking-stat-icon">📏</span>
               <div>
                 <span className="tracking-stat-label">Distance</span>
                 <span className="tracking-stat-value">
@@ -192,10 +209,31 @@ function DeliveryTrackingModal({ route, onClose, onDeliveryComplete }) {
               </div>
             </div>
             <div className="tracking-stat">
-              <span className="tracking-stat-icon">⏱️</span>
               <div>
                 <span className="tracking-stat-label">Est. Duration</span>
                 <span className="tracking-stat-value">{formatDuration(totalDuration)}</span>
+              </div>
+            </div>
+            <div className="tracking-stat">
+              <div>
+                <span className="tracking-stat-label">Status</span>
+                <span className="tracking-stat-value">
+                  {(route.status || "unknown").replace("_", " ").toUpperCase()}
+                </span>
+              </div>
+            </div>
+            <div className="tracking-stat">
+              <div>
+                <span className="tracking-stat-label">Cost</span>
+                <span className="tracking-stat-value">₹ {(route.cost ?? 0).toFixed(2)}</span>
+              </div>
+            </div>
+            <div className="tracking-stat">
+              <div>
+                <span className="tracking-stat-label">Pickup Time</span>
+                <span className="tracking-stat-value">
+                  {route.start_time ? new Date(route.start_time).toLocaleString("en-IN", { dateStyle: "short", timeStyle: "short" }) : "—"}
+                </span>
               </div>
             </div>
           </div>
@@ -218,12 +256,12 @@ function DeliveryTrackingModal({ route, onClose, onDeliveryComplete }) {
           <div className="tracking-remaining-time-block">
             {progress >= 1 ? (
               <div className="tracking-remaining-time completed">
-                ✅ Delivery Completed!
+                Delivery completed
               </div>
             ) : (
               <>
                 <div className="tracking-remaining-time">
-                  ⏳ {formatRemainingDisplay(remainingMs)}
+                  {formatRemainingDisplay(remainingMs)}
                 </div>
                 <div className="tracking-remaining-sub">
                   Estimated arrival based on delivery start time

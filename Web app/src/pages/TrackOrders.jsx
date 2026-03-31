@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAppContext } from "../context/AppContext";
 import DeliveryTrackingModal from "../components/DeliveryTrackingModal";
-import CompletedDeliveryModal from "../components/CompletedDeliveryModal";
+import OrderReceiptModal from "../components/OrderReceiptModal";
+import EmptyState from "../components/EmptyState";
 
 // Map order DB fields → shape expected by DeliveryTrackingModal
 function toTrackingShape(order) {
@@ -31,7 +32,19 @@ function TrackOrders() {
 
   const [filter, setFilter] = useState("All");
   const [trackingOrder, setTrackingOrder] = useState(null);
-  const [completedOrder, setCompletedOrder] = useState(null);
+  const [receiptOrder, setReceiptOrder] = useState(null);
+  const trackingOrderId = useMemo(() => trackingOrder?.id, [trackingOrder]);
+
+  // Stop tracking if the order transitions to completed/cancelled while modal is open.
+  useEffect(() => {
+    if (!trackingOrderId || ordersLoading) return;
+    const current = orders.find((o) => String(o.id) === String(trackingOrderId));
+    if (!current) return;
+    if (current.status === "completed" || current.status === "cancelled") {
+      setTrackingOrder(null);
+      setReceiptOrder(current);
+    }
+  }, [ordersLoading, orders, trackingOrderId]);
 
   // Filter by package type
   const filteredOrders =
@@ -59,11 +72,21 @@ function TrackOrders() {
 
   const handleDeliveryComplete = async (id) => {
     await updateOrderStatusById(id, "completed");
-    showToast("✅ Delivery completed!", "success");
+    showToast("Delivery completed", "success");
     setTrackingOrder(null);
+    const current = orders.find((o) => String(o.id) === String(id));
+    if (current) setReceiptOrder({ ...current, status: "completed" });
   };
 
   const handleTrackLive = (order) => {
+    if (order.status !== "in_progress") {
+      if (order.status === "completed" || order.status === "cancelled") {
+        setReceiptOrder(order);
+      } else {
+        showToast("Tracking is only available when an order is in progress.", "error");
+      }
+      return;
+    }
     const shape = toTrackingShape(order);
     // Only open tracking if we have geometry to animate along
     if (!shape.geometry || shape.geometry.length < 2) {
@@ -74,7 +97,7 @@ function TrackOrders() {
   };
 
   const handleViewReceipt = (order) => {
-    setCompletedOrder(toTrackingShape(order));
+    setReceiptOrder(order);
   };
 
   return (
@@ -90,7 +113,7 @@ function TrackOrders() {
           </p>
         </div>
         <button className="accent-btn" onClick={() => navigate("/create-order")}>
-          📦 New Order
+          New Order
         </button>
       </div>
 
@@ -111,7 +134,7 @@ function TrackOrders() {
 
       {/* Orders */}
       {ordersLoading ? (
-        <div className="empty-state">⏳ Loading orders...</div>
+        <div className="empty-state">Loading orders...</div>
       ) : filteredOrders.length > 0 ? (
         <div className="orders-grid">
           {filteredOrders.map((order) => (
@@ -147,15 +170,15 @@ function TrackOrders() {
 
                 {/* Stats */}
                 <div className="order-meta">
-                  <span>📦 {order.package_type} ({Number(order.weight || 0)}kg)</span>
-                  <span>📍 {order.distance_km ? `${Number(order.distance_km).toFixed(1)} km` : "—"}</span>
+                  <span>{order.package_type} ({Number(order.weight || 0)}kg)</span>
+                  <span>{order.distance_km ? `${Number(order.distance_km).toFixed(1)} km` : "—"}</span>
                   <span>₹{Number(order.cost || 0).toFixed(2)}</span>
                 </div>
 
                 {/* ETA for in-progress */}
                 {order.status === "in_progress" && (
                   <div className="live-eta">
-                    ⏳ ETA: {calculateRemainingStr(order)}
+                    ETA: {calculateRemainingStr(order)}
                   </div>
                 )}
 
@@ -170,7 +193,7 @@ function TrackOrders() {
                     marginBottom: "12px",
                     textAlign: "center",
                   }}>
-                    🕐 Pickup: {new Date(order.pickup_time).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })}
+                    Pickup: {new Date(order.pickup_time).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })}
                   </div>
                 )}
               </div>
@@ -179,7 +202,7 @@ function TrackOrders() {
               <div className="order-card-actions">
                 {order.status === "planned" && (
                   <div className="auto-start-notice">
-                    🕐 Starts automatically at pickup time
+                    Starts automatically at pickup time
                   </div>
                 )}
                 {order.status === "in_progress" && (
@@ -187,15 +210,15 @@ function TrackOrders() {
                     className="secondary-btn"
                     onClick={() => handleTrackLive(order)}
                   >
-                    📡 Track Live
+                    Track Live
                   </button>
                 )}
-                {order.status === "completed" && (
+                {(order.status === "completed" || order.status === "cancelled") && (
                   <button
                     className="secondary-btn"
                     onClick={() => handleViewReceipt(order)}
                   >
-                    🧾 View Receipt
+                    View Receipt
                   </button>
                 )}
               </div>
@@ -203,19 +226,17 @@ function TrackOrders() {
           ))}
         </div>
       ) : (
-        <div className="empty-state">
-          <span>📭</span>
-          <p>
-            {filter === "All"
-              ? "No orders yet. Create your first delivery!"
-              : `No ${filter} orders found.`}
-          </p>
-          {filter === "All" && (
-            <button className="accent-btn" style={{ marginTop: "16px" }} onClick={() => navigate("/create-order")}>
-              📦 Create Order
-            </button>
-          )}
-        </div>
+        <EmptyState
+          variant="orders"
+          title={filter === "All" ? "No orders yet" : `No ${filter} orders`}
+          message={
+            filter === "All"
+              ? "Create your first delivery to start tracking."
+              : "Try changing the filter or adjust your search criteria."
+          }
+          actionLabel={filter === "All" ? "Create order" : undefined}
+          onAction={filter === "All" ? () => navigate("/create-order") : undefined}
+        />
       )}
 
       {/* Live Tracking Modal */}
@@ -227,11 +248,11 @@ function TrackOrders() {
         />
       )}
 
-      {/* Completed Receipt Modal */}
-      {completedOrder && (
-        <CompletedDeliveryModal
-          route={completedOrder}
-          onClose={() => setCompletedOrder(null)}
+      {/* Receipt Modal (completed or cancelled) */}
+      {receiptOrder && (
+        <OrderReceiptModal
+          order={receiptOrder}
+          onClose={() => setReceiptOrder(null)}
         />
       )}
     </div>

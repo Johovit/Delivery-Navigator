@@ -73,7 +73,7 @@ export function AppProvider({ children }) {
       setSettingsLoading(false);
     });
 
-    const channel = supabase.channel("app_settings_watcher")
+    const settingsChannel = supabase.channel("app_settings_watcher")
       .on(
         "postgres_changes",
         { event: "UPDATE", schema: "public", table: "app_settings" },
@@ -81,6 +81,31 @@ export function AppProvider({ children }) {
           if (payload.new?.cost_per_km !== undefined) {
             setSettings({ costPerKm: Number(payload.new.cost_per_km) });
           }
+        }
+      )
+      .subscribe();
+
+    // Realtime orders updates for current user
+    const ordersChannel = supabase
+      .channel(`orders_watcher_${user.id}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "orders", filter: `user_id=eq.${user.id}` },
+        (payload) => {
+          const next = payload.new;
+          const old = payload.old;
+          setOrders((prev) => {
+            if (payload.eventType === "INSERT") {
+              return [normalizeOrder(next), ...prev];
+            }
+            if (payload.eventType === "UPDATE") {
+              return prev.map((o) => (o.id === next.id ? normalizeOrder({ ...o, ...next }) : o));
+            }
+            if (payload.eventType === "DELETE") {
+              return prev.filter((o) => o.id !== old.id);
+            }
+            return prev;
+          });
         }
       )
       .subscribe();
@@ -120,7 +145,8 @@ export function AppProvider({ children }) {
 
     return () => {
       cancelled = true;
-      supabase.removeChannel(channel);
+      supabase.removeChannel(settingsChannel);
+      supabase.removeChannel(ordersChannel);
     };
   }, [user]);
 
@@ -259,6 +285,24 @@ export function AppProvider({ children }) {
   );
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
+}
+
+function safeParseGeometry(geometry) {
+  if (!geometry) return null;
+  if (Array.isArray(geometry)) return geometry;
+  try {
+    return JSON.parse(geometry);
+  } catch {
+    return null;
+  }
+}
+
+function normalizeOrder(order) {
+  if (!order) return order;
+  return {
+    ...order,
+    geometry: safeParseGeometry(order.geometry),
+  };
 }
 
 export function useAppContext() {

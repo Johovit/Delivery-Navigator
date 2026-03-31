@@ -10,7 +10,6 @@ export default function AdminRoute() {
         return (
             <div className="page dashboard-page">
                  <div className="empty-state compact">
-                     <span className="empty-icon">⏳</span>
                      <p>Verifying access...</p>
                  </div>
             </div>
