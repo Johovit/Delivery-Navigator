@@ -69,7 +69,7 @@ function AdminDashboard() {
       </div>
 
       {/* Stats Grid */}
-      <div className="admin-stats-grid">
+      <div className="admin-stats-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full">
         {statCards.map(({ label, value, color, textColor }) => (
           <div
             key={label}
@@ -106,7 +106,7 @@ function AdminDashboard() {
         ) : (
           <div className="admin-recent-list">
             {recentOrders.map((order) => (
-              <div key={order.id} className="admin-recent-row">
+              <div key={order.id} className="admin-recent-row flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div className="admin-recent-user">
                   <span className="admin-user-avatar">{getUserLabel(order).charAt(0).toUpperCase()}</span>
                   <div>

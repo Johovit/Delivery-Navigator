@@ -165,10 +165,10 @@ function AdminOrders() {
       </div>
 
       {/* Filters */}
-      <div className="admin-filters">
-        <div className="filter-group" style={{ minWidth: "250px" }}>
+      <div className="admin-filters flex flex-col lg:flex-row flex-wrap gap-4 mb-6">
+        <div className="filter-group w-full lg:w-auto" style={{ minWidth: "250px" }}>
           <span className="filter-label">Status</span>
-          <div className="order-filters">
+          <div className="order-filters flex flex-wrap gap-2">
             {STATUS_OPTIONS.map((opt) => (
               <button
                 key={opt.value}
@@ -181,8 +181,8 @@ function AdminOrders() {
           </div>
         </div>
 
-        <div className="date-filters-wrapper">
-          <div className="filter-group">
+        <div className="date-filters-wrapper flex flex-col sm:flex-row flex-wrap gap-4 items-start sm:items-end w-full lg:w-auto">
+          <div className="filter-group w-full sm:w-auto">
             <label htmlFor="dateFrom" className="filter-label">Date From</label>
             <input
               id="dateFrom"
@@ -194,7 +194,7 @@ function AdminOrders() {
               autoComplete="off"
             />
           </div>
-          <div className="filter-group">
+          <div className="filter-group w-full sm:w-auto">
             <label htmlFor="dateTo" className="filter-label">Date To</label>
             <input
               id="dateTo"
@@ -206,16 +206,16 @@ function AdminOrders() {
               autoComplete="off"
             />
           </div>
+          {(dateFrom || dateTo) && (
+            <button
+              className="secondary-btn clear-dates-btn"
+              onClick={() => { setDateFrom(""); setDateTo(""); }}
+              title="Clear dates"
+            >
+              Clear
+            </button>
+          )}
         </div>
-        {(dateFrom || dateTo) && (
-          <button
-            className="secondary-btn"
-            onClick={() => { setDateFrom(""); setDateTo(""); }}
-            style={{ alignSelf: "flex-end" }}
-          >
-            Clear Dates
-          </button>
-        )}
       </div>
 
       {/* Orders Table */}
@@ -231,8 +231,8 @@ function AdminOrders() {
           message="No orders match the selected filters."
         />
       ) : (
-        <div className="admin-orders-table-wrap">
-          <table className="admin-table">
+        <div className="admin-orders-table-wrap overflow-x-auto w-full bg-white rounded-lg border border-slate-200">
+          <table className="admin-table w-full whitespace-nowrap">
             <thead>
               <tr>
                 <th>Username</th>

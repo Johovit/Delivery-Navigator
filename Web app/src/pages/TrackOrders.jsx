@@ -124,7 +124,7 @@ function TrackOrders() {
 
       {/* Filters */}
       {!ordersLoading && orders.length > 0 && (
-        <div className="order-filters">
+        <div className="order-filters flex flex-wrap gap-2 mb-6">
           {["All", "Parcel", "Courier", "Fragile", "Bulk"].map((f) => (
             <button
               key={f}
@@ -144,9 +144,9 @@ function TrackOrders() {
           Loading orders...
         </div>
       ) : filteredOrders.length > 0 ? (
-        <div className="orders-grid">
+        <div className="orders-grid grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 w-full">
           {filteredOrders.map((order) => (
-            <div key={order.id} className="order-card slide-in">
+            <div key={order.id} className="order-card slide-in flex flex-col w-full h-full">
               {/* Card Header */}
               <div className="order-card-header">
                 <span className="order-date">

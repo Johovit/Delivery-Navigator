@@ -66,18 +66,23 @@ export default function Signup() {
         setLoading(true);
 
         try {
-            const payload = await signUp(email, password);
+            const username = email.split('@')[0];
+            const payload = await signUp(email, password, { username, email });
             const user = payload?.user;
             
-            if (user) {
-                const username = email.split('@')[0];
-                await supabase.from('user_profiles').upsert({
+            // Only attempt profile upsert if the backend returned a session (email confirmation is off).
+            // This dodges the 403 Forbidden RLS error when we are unauthenticated.
+            if (user && payload?.session) {
+                const { error: profileErr } = await supabase.from('user_profiles').upsert({
                     id: user.id,
                     email: email,
                     username: username,
-                    role: 'user',
-                    updated_at: new Date().toISOString()
+                    role: 'user'
                 }, { onConflict: 'id' });
+                
+                if (profileErr) {
+                    console.error("Supabase Profile Upsert Error:", profileErr);
+                }
             }
 
             // If Supabase returns a session, email confirmation is disabled. We can auto-login!
@@ -111,8 +116,8 @@ export default function Signup() {
     };
 
     return (
-        <div className="auth-container">
-            <div className="auth-card">
+        <div className="auth-container flex items-center justify-center min-h-screen p-4 sm:p-6">
+            <div className="auth-card w-full max-w-[420px] mx-auto overflow-hidden">
                 <div className="auth-header">
                     <img src="/logo.svg" alt="Delivery Navigator" className="auth-logo" />
                     <h2>Create Account</h2>

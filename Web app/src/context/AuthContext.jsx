@@ -20,18 +20,38 @@ export function AuthProvider({ children }) {
     const [roleLoading, setRoleLoading] = useState(false);
 
     useEffect(() => {
-        // Get initial session
-        supabase.auth.getSession().then(({ data: { session } }) => {
-            setSession(session);
-            setUser(session?.user ?? null);
-            setAuthLoading(false);
-        });
+        // Get initial session and handle potential refresh token errors
+        const initializeAuth = async () => {
+            try {
+                const { data: { session }, error } = await supabase.auth.getSession();
+                if (error) {
+                    console.error("Supabase Auth Error:", error.message);
+                    // If refresh token is invalid, clear local auth state
+                    await supabase.auth.signOut();
+                }
+                setSession(session);
+                setUser(session?.user ?? null);
+            } catch (err) {
+                console.error("Unexpected auth initialization error:", err);
+            } finally {
+                setAuthLoading(false);
+            }
+        };
+
+        initializeAuth();
 
         // Listen for changes
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
-            (_event, session) => {
-                setSession(session);
-                setUser(session?.user ?? null);
+            async (event, session) => {
+                if (event === 'TOKEN_REFRESH_FAILED') {
+                    console.error("Token refresh failed, signing out...");
+                    await supabase.auth.signOut();
+                    setSession(null);
+                    setUser(null);
+                } else {
+                    setSession(session);
+                    setUser(session?.user ?? null);
+                }
                 setAuthLoading(false);
             }
         );

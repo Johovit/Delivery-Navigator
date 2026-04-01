@@ -11,10 +11,11 @@ export async function logIn(email, password) {
 }
 
 /** Signup with email and password */
-export async function signUp(email, password) {
+export async function signUp(email, password, metadata = {}) {
     const { data, error } = await supabase.auth.signUp({
         email,
         password,
+        options: Object.keys(metadata).length > 0 ? { data: metadata } : undefined
     });
     if (error) throw error;
     return data;

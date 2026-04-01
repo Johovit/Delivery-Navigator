@@ -79,8 +79,8 @@ function UserMessages() {
         </button>
       </div>
 
-      <div className="card chat-window user-chat-window" style={{ height: "calc(100vh - 220px)" }}>
-        <div className="chat-messages">
+      <div className="card chat-window user-chat-window flex flex-col w-full h-[calc(100vh-160px)] min-h-[400px]">
+        <div className="chat-messages flex-1 overflow-y-auto w-full">
           {loading && (
             <div className="inbox-loading" style={{ display: "flex", alignItems: "center", gap: "8px", justifyContent: "center" }}>
               <Loader className="spin" size={18} /> Loading your messages...
@@ -99,13 +99,12 @@ function UserMessages() {
               return (
                 <div
                   key={msg.id}
-                  className={`chat-bubble-container ${
+                  className={`chat-bubble-container w-full max-w-full flex ${isUser ? "justify-end" : "justify-start"} mb-4 ${
                     isUser ? "is-admin" : "is-user"
                   }`}
-                  /* Note: we repurpose `.is-admin` for the right-hand bubble, which in the user view is the user. */
                 >
-                  <div className="chat-bubble">
-                    <p className="chat-text">{msg.message}</p>
+                  <div className="chat-bubble break-words overflow-hidden max-w-[85%] sm:max-w-[70%]">
+                    <p className="chat-text whitespace-pre-wrap">{msg.message}</p>
                     <span className="chat-time">{formatDate(msg.created_at)}</span>
                   </div>
                 </div>
@@ -114,13 +113,14 @@ function UserMessages() {
           <div ref={messagesEndRef} />
         </div>
 
-        <form className="chat-input-area" onSubmit={handleSendMessage}>
+        <form className="chat-input-area mt-auto w-full flex" onSubmit={handleSendMessage}>
           <label htmlFor="messageText" style={{ position: "absolute", width: "1px", height: "1px", padding: 0, margin: "-1px", overflow: "hidden", clip: "rect(0, 0, 0, 0)", whiteSpace: "nowrap", border: 0 }}>Message</label>
           <input
             id="messageText"
             name="messageText"
             autoComplete="off"
             type="text"
+            className="flex-1 w-full min-w-0"
             placeholder="Type a message..."
             value={messageText}
             onChange={(e) => setMessageText(e.target.value)}

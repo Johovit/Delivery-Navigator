@@ -41,8 +41,8 @@ function Settings() {
       {showLogoutConfirm && (
         <div className="modal-overlay" onClick={() => setShowLogoutConfirm(false)}>
           <div className="confirm-dialog" onClick={(e) => e.stopPropagation()}>
-            <div className="confirm-icon" aria-hidden="true">
-              <LogOut size={28} color="var(--color-error)" />
+            <div className="confirm-icon flex justify-center mb-4" aria-hidden="true">
+              <LogOut size={32} color="var(--color-error)" />
             </div>
             <h3>Confirm Logout</h3>
             <p>Are you sure you want to log out of Delivery Navigator?</p>

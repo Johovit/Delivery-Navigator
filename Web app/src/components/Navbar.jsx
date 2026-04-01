@@ -28,7 +28,7 @@ function Navbar({ onMenuClick = () => {} }) {
     <header className="top-navbar">
       <button
         type="button"
-        className="mobile-menu-btn"
+        className="mobile-menu-btn block lg:hidden"
         onClick={onMenuClick}
         aria-label="Open navigation menu"
         title="Open menu"
@@ -36,8 +36,8 @@ function Navbar({ onMenuClick = () => {} }) {
         <Menu size={24} />
       </button>
 
-      <div className="top-navbar-left">
-        <h2>{page.title}</h2>
+      <div className="top-navbar-left hidden sm:block">
+        <h2 className="text-lg md:text-xl font-bold">{page.title}</h2>
         <span className="top-navbar-sub">{page.sub}</span>
       </div>
 
@@ -50,8 +50,8 @@ function Navbar({ onMenuClick = () => {} }) {
               className="accent-btn"
               onClick={() => navigate("/create-order")}
             >
-              <span className="hide-on-mobile">Create Order</span>
-              <span className="show-on-mobile">Create</span>
+              <span className="hidden sm:inline">Create Order</span>
+              <span className="sm:hidden">Create</span>
             </button>
             <button
               type="button"
@@ -59,8 +59,8 @@ function Navbar({ onMenuClick = () => {} }) {
               onClick={() => navigate("/track-orders")}
               style={{ marginLeft: "8px" }}
             >
-              <span className="hide-on-mobile">Track Orders</span>
-              <span className="show-on-mobile">Track</span>
+              <span className="hidden sm:inline">Track Orders</span>
+              <span className="sm:hidden">Track</span>
             </button>
           </>
         )}
@@ -71,8 +71,8 @@ function Navbar({ onMenuClick = () => {} }) {
             className="accent-btn"
             onClick={() => navigate("/admin/orders")}
           >
-            <span className="hide-on-mobile">Manage Orders</span>
-            <span className="show-on-mobile">Orders</span>
+            <span className="hidden sm:inline">Manage Orders</span>
+            <span className="sm:hidden">Orders</span>
           </button>
         )}
 

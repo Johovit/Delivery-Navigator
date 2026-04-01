@@ -19,16 +19,20 @@
 
 .layout-content {
   flex: 1;
+  min-height: 0; /* allows flex children to fill height on mobile browsers */
   padding: var(--space-6);
   overflow-y: auto;
   background: var(--bg-app);
+  display: flex;
+  flex-direction: column;
 }
 
 /* ===============================
    Page Wrapper
 ================================ */
 .page {
-  max-width: 1200px;
+  width: 100%;
+  max-width: 1600px;
   margin: 0 auto;
 }
 
@@ -2143,7 +2147,6 @@ select {
   }
 
   .inbox-sidebar {
-    max-height: 200px;
     border-right: none;
     border-bottom: 1px solid var(--border);
   }
@@ -2665,7 +2668,8 @@ button.status-badge.completed.clickable:active {
 .auth-logo {
   height: 54px;
   width: auto;
-  margin-bottom: var(--space-4);
+  display: block;
+  margin: 0 auto var(--space-4);
   /* Make the logo pop against the light card background */
   filter: drop-shadow(0 4px 6px rgba(30, 58, 138, 0.15));
   border-radius: var(--radius-md);
@@ -2821,24 +2825,51 @@ button.status-badge.completed.clickable:active {
 /* ===============================
    Inbox & Chat Layout
 ================================ */
+/* Admin inbox page fills layout-content height */
+.admin-inbox-page {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  width: 100%;
+}
+
 .inbox-container {
   display: flex;
-  height: calc(100vh - 200px);
+  flex: 1;
+  min-height: 0; /* allow shrink/grow within flex parent */
   background: var(--bg-surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   overflow: hidden;
-  box-shadow: var(--shadow-sm);
+  box-shadow: 0 4px 24px rgba(0,0,0,0.07);
 }
 
 .inbox-sidebar {
-  width: 320px;
-  min-width: 320px;
+  width: 300px;
+  min-width: 300px;
+  height: 100%;
   border-right: 1px solid var(--border);
   background: var(--bg-surface);
   display: flex;
   flex-direction: column;
-  overflow-y: auto;
+  overflow-y: hidden;
+}
+
+.inbox-sidebar-header {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-muted);
+  flex-shrink: 0;
+}
+
+.inbox-sidebar-header h5 {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--text-muted);
+  margin: 0;
 }
 
 .inbox-loading {
@@ -2852,16 +2883,20 @@ button.status-badge.completed.clickable:active {
   list-style: none;
   padding: 0;
   margin: 0;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
 }
 
 .inbox-user-item {
   display: flex;
   align-items: center;
-  padding: var(--space-4);
-  gap: var(--space-3);
+  padding: 12px 16px;
+  gap: 12px;
   cursor: pointer;
   border-bottom: 1px solid var(--border);
-  transition: background var(--transition-fast);
+  transition: background 0.15s ease;
+  position: relative;
 }
 
 .inbox-user-item:hover {
@@ -2870,33 +2905,55 @@ button.status-badge.completed.clickable:active {
 
 .inbox-user-item.active {
   background: var(--color-primary-pale);
-  border-right: 3px solid var(--color-primary);
+  border-left: 3px solid var(--color-primary-mid);
+  padding-left: 13px;
 }
 
 .inbox-user-avatar {
-  width: 40px;
-  height: 40px;
+  width: 42px;
+  height: 42px;
   border-radius: 50%;
-  background: var(--color-primary);
+  background: linear-gradient(135deg, #2563eb, #1e3a8a);
   color: #fff;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: 600;
-  font-size: var(--font-sm);
+  font-weight: 700;
+  font-size: 15px;
   flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(37,99,235,0.25);
+  letter-spacing: 0.01em;
 }
 
 .inbox-user-info {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  flex: 1;
+  min-width: 0;
+}
+
+.inbox-user-info-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
 }
 
 .inbox-user-id {
-  font-size: var(--font-sm);
+  font-size: 14px;
   font-weight: 600;
   color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.inbox-last-msg-time {
+  font-size: 11px;
+  color: var(--text-faint);
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .inbox-last-msg {
@@ -2905,11 +2962,6 @@ button.status-badge.completed.clickable:active {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-
-.inbox-last-msg-time {
-  font-size: 11px;
-  color: var(--text-muted);
   margin-top: 2px;
 }
 
@@ -2942,19 +2994,49 @@ button.status-badge.completed.clickable:active {
 }
 
 .chat-header {
-  padding: var(--space-4) var(--space-5);
+  padding: 14px 20px;
   background: var(--bg-surface);
   border-bottom: 1px solid var(--border);
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 12px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+  flex-shrink: 0;
+}
+
+.chat-header-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #2563eb, #1e3a8a);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.chat-header-info {
+  flex: 1;
+  min-width: 0;
 }
 
 .chat-header h4 {
   margin: 0;
-  font-size: var(--font-md);
-  font-weight: 600;
+  font-size: 15px;
+  font-weight: 700;
   color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.chat-header-sub {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 1px;
 }
 
 .chat-messages {
@@ -2980,19 +3062,18 @@ button.status-badge.completed.clickable:active {
 }
 
 .chat-bubble {
-  max-width: 85%;
-  padding: var(--space-3) var(--space-4);
-  border-radius: var(--radius-lg);
+  max-width: 72%;
+  padding: 10px 14px;
+  border-radius: 16px;
   position: relative;
-  box-shadow: var(--shadow-sm);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
   word-wrap: break-word;
   word-break: break-word;
   white-space: pre-wrap;
-  overflow: hidden;
 }
 
 .is-admin .chat-bubble {
-  background: var(--color-primary);
+  background: linear-gradient(135deg, #2563eb, #1e3a8a);
   color: #fff;
   border-bottom-right-radius: 4px;
 }
@@ -3019,30 +3100,38 @@ button.status-badge.completed.clickable:active {
 }
 
 .chat-input-area {
-  padding: var(--space-4) var(--space-5);
+  padding: 12px 16px;
   background: var(--bg-surface);
   border-top: 1px solid var(--border);
   display: flex;
-  gap: var(--space-3);
+  gap: 10px;
+  align-items: center;
+  flex-shrink: 0;
 }
 
 .chat-input-area input {
   flex: 1;
-  padding: 12px 16px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-full);
+  padding: 11px 16px;
+  border: 1.5px solid var(--border);
+  border-radius: 24px;
   outline: none;
-  font-size: var(--font-base);
-  transition: border-color var(--transition-fast);
+  font-size: 14px;
+  background: var(--bg-muted);
+  color: var(--text-primary);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .chat-input-area input:focus {
-  border-color: var(--color-primary-light);
+  border-color: var(--color-primary-mid);
+  box-shadow: 0 0 0 3px rgba(37,99,235,0.12);
+  background: var(--bg-surface);
 }
 
 .chat-input-area .primary-btn {
-  border-radius: var(--radius-full);
-  padding: 10px 24px;
+  border-radius: 24px;
+  padding: 10px 22px;
+  font-size: 14px;
+  flex-shrink: 0;
 }
 
 /* ===============================
@@ -3056,34 +3145,56 @@ button.status-badge.completed.clickable:active {
 }
 
 @media (max-width: 768px) {
-  .inbox-container {
-    height: calc(100vh - 160px); /* Slightly shorter to prevent overflow on mobile */
+  /*
+   * Keep the flex chain intact on mobile so inbox-container
+   * fills all available height. The sidebar has overflow-y:auto
+   * so all conversations are reachable by scrolling.
+   * Do NOT set flex:0 0 auto or height:auto here.
+   */
+
+  /* List view: switch container to column so sidebar can use flex:1 reliably */
+  .inbox-container.mobile-list-view {
+    flex-direction: column;
   }
 
-  /* List view displays sidebar full width, hides chat */
   .inbox-container.mobile-list-view .inbox-sidebar {
     width: 100%;
     min-width: 100%;
+    flex: 1;                 /* fill the column — flex: 1 is reliable; height: 100% is not */
+    min-height: 0;           /* allow shrinking within flex */
     border-right: none;
     display: flex;
+    flex-direction: column;
+    overflow-y: hidden;      /* sidebar shell doesn't scroll */
   }
+
+  /* Only the user list scrolls; header stays pinned */
+  .inbox-container.mobile-list-view .inbox-user-list {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
   .inbox-container.mobile-list-view .inbox-chat-area {
     display: none;
   }
 
-  /* Chat view hides sidebar, displays chat full width */
+  /* Chat view: sidebar hidden, chat fills full width */
   .inbox-container.mobile-chat-view .inbox-sidebar {
     display: none;
   }
+
   .inbox-container.mobile-chat-view .inbox-chat-area {
     width: 100%;
     display: flex;
+    flex-direction: column;
   }
 
   .chat-input-area {
     padding: var(--space-3);
   }
-  
+
   .chat-input-area input {
     min-width: 0;
   }
@@ -3091,6 +3202,7 @@ button.status-badge.completed.clickable:active {
   .chat-bubble {
     max-width: 90%;
   }
+
 
   .mobile-back-btn {
     display: inline-flex !important;

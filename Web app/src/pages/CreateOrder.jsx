@@ -34,9 +34,9 @@ function CityInput({
   const pincodeOk = isValidPincode(pincode);
 
   return (
-    <div className="city-input-block">
+    <div className="city-input-block flex flex-col sm:flex-row gap-4 sm:gap-6 w-full mb-4">
       {/* City search */}
-      <div className="input-group" style={{ position: "relative" }}>
+      <div className="input-group w-full" style={{ position: "relative" }}>
         <label htmlFor={`${label.toLowerCase()}-city`}>
           {label} City <span className="required-star">*</span>
         </label>
@@ -77,7 +77,7 @@ function CityInput({
       </div>
 
       {/* Pincode */}
-      <div className="input-group">
+      <div className="input-group w-full">
         <label htmlFor={`${label.toLowerCase()}-pincode`}>
           {label} Pincode <span className="required-star">*</span>
         </label>
@@ -335,7 +335,7 @@ export default function CreateOrder() {
       )}
 
       {/* Stepper */}
-      <div className="order-stepper">
+      <div className="order-stepper flex flex-wrap sm:flex-nowrap gap-2 sm:gap-4 overflow-x-auto w-full pb-2 mb-6">
         {steps.map((label, idx) => (
           <div
             key={label}
@@ -439,10 +439,10 @@ export default function CreateOrder() {
             {descError && <p className="field-hint error">{descError}</p>}
           </div>
 
-          <div className="form-actions">
-            <button className="secondary-btn" onClick={() => setCurrentStep(1)}>Back</button>
+          <div className="form-actions flex flex-col-reverse sm:flex-row gap-3 mt-6">
+            <button className="secondary-btn w-full sm:w-auto" onClick={() => setCurrentStep(1)}>Back</button>
             <button
-              className="accent-btn"
+              className="accent-btn w-full sm:w-auto"
               onClick={() => { if (validateStep2() && parseFloat(weight) > 0) setCurrentStep(3); else if (parseFloat(weight) <= 0 || !weight) showToast("Please enter a valid weight", "error"); }}
               disabled={!weight}
             >
@@ -487,9 +487,9 @@ export default function CreateOrder() {
             <div className="alert-error">{routeError}</div>
           )}
 
-          <div className="form-actions">
-            <button className="secondary-btn" onClick={() => setCurrentStep(2)}>Back</button>
-            <button className="accent-btn" onClick={calculateRoute} disabled={!pickupTime || routeLoading}>
+          <div className="form-actions flex flex-col-reverse sm:flex-row gap-3 mt-6">
+            <button className="secondary-btn w-full sm:w-auto" onClick={() => setCurrentStep(2)}>Back</button>
+            <button className="accent-btn w-full sm:w-auto" onClick={calculateRoute} disabled={!pickupTime || routeLoading}>
               {routeLoading ? (
                 <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                   <Loader className="spin" size={18} /> Fetching route...
@@ -539,9 +539,9 @@ export default function CreateOrder() {
             </div>
           </div>
 
-          <div className="form-actions">
-            <button className="secondary-btn" onClick={() => setCurrentStep(3)}>Back</button>
-            <button className="accent-btn" onClick={() => setCurrentStep(5)}>Proceed to Payment</button>
+          <div className="form-actions flex flex-col-reverse sm:flex-row gap-3 mt-8">
+            <button className="secondary-btn w-full sm:w-auto" onClick={() => setCurrentStep(3)}>Back</button>
+            <button className="accent-btn w-full sm:w-auto" onClick={() => setCurrentStep(5)}>Proceed to Payment</button>
           </div>
         </div>
       )}
@@ -573,9 +573,9 @@ export default function CreateOrder() {
             ))}
           </div>
 
-          <div className="form-actions">
-            <button className="secondary-btn" onClick={() => setCurrentStep(4)} disabled={isSubmitting}>Back</button>
-            <button className="primary-btn" onClick={handleConfirmOrder} disabled={!paymentMethod || isSubmitting} style={{ minWidth: "180px" }}>
+          <div className="form-actions flex flex-col-reverse sm:flex-row gap-3 mt-8">
+            <button className="secondary-btn w-full sm:w-auto" onClick={() => setCurrentStep(4)} disabled={isSubmitting}>Back</button>
+            <button className="primary-btn w-full sm:w-auto" onClick={handleConfirmOrder} disabled={!paymentMethod || isSubmitting} style={{ minWidth: "180px" }}>
               {isSubmitting ? "Placing order..." : "Confirm and Pay"}
             </button>
           </div>

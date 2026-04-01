@@ -66,15 +66,18 @@ export default function Login() {
                     throw new Error("Please login through Admin Portal.");
                 }
 
-                if (!data || !data.username) {
-                    const username = email.split('@')[0];
-                    await supabase.from("user_profiles").upsert({
+                if (!data || !data.username || !data.email) {
+                    const username = data?.username || email.split('@')[0];
+                    const { error: updateError } = await supabase.from("user_profiles").upsert({
                         id: user.id,
                         email: email,
                         username: username,
-                        role: data?.role || 'user',
-                        updated_at: new Date().toISOString()
+                        role: data?.role || 'user'
                     }, { onConflict: 'id' });
+                    
+                    if (updateError) {
+                        console.error("Supabase Profile Upsert Error in Login:", updateError);
+                    }
                 }
             }
             
@@ -88,6 +91,9 @@ export default function Login() {
             } else if (msg.includes("email not confirmed")) {
                 setError("Please verify your email address before logging in. Check your inbox.");
                 startCooldown(3);
+            } else if (msg.includes("invalid login credentials")) {
+                setError("Incorrect email or password. Please try again.");
+                startCooldown(3);
             } else {
                 setError(err.message || "Failed to log in");
                 startCooldown(3);
@@ -99,8 +105,8 @@ export default function Login() {
     };
 
     return (
-        <div className="auth-container">
-            <div className="auth-card">
+        <div className="auth-container flex items-center justify-center min-h-screen p-4 sm:p-6">
+            <div className="auth-card w-full max-w-[420px] mx-auto overflow-hidden">
                 <div className="auth-header">
                     <img src="/logo.svg" alt="Delivery Navigator Logo" className="auth-logo" />
                     <h2>Welcome Back</h2>

@@ -89,7 +89,7 @@ function AdminInbox() {
   };
 
   return (
-    <div className="page admin-inbox-page">
+    <div className={`page admin-inbox-page${selectedUser ? " mobile-chat-active" : ""}`}>
       <div className="page-header-row">
         <div>
           <h3 className="page-title">Admin Inbox</h3>
@@ -106,9 +106,12 @@ function AdminInbox() {
         </button>
       </div>
 
-      <div className={`inbox-container ${selectedUser ? "mobile-chat-view" : "mobile-list-view"}`}>
+      <div className={`inbox-container flex flex-1 w-full overflow-hidden border border-[var(--border)] rounded-lg ${selectedUser ? "mobile-chat-view" : "mobile-list-view"}`}>
         {/* Left Side: Users List */}
-        <div className="inbox-sidebar">
+        <div className={`inbox-sidebar flex-col flex-shrink-0 sm:w-[320px] border-r border-[var(--border)] ${selectedUser ? "hidden sm:flex" : "flex w-full h-full"}`}>
+          <div className="inbox-sidebar-header shrink-0 p-4 border-b border-[var(--border)] bg-[var(--bg-muted)]">
+            <h5 className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)] m-0">Conversations</h5>
+          </div>
           {loadingList ? (
             <div className="inbox-loading" style={{ display: "flex", alignItems: "center", gap: "8px", justifyContent: "center" }}>
               <Loader className="spin" size={18} /> Loading users...
@@ -121,7 +124,7 @@ function AdminInbox() {
               compact
             />
           ) : (
-            <ul className="inbox-user-list">
+            <ul className="inbox-user-list flex-1 overflow-y-auto min-h-0 m-0 p-0 list-none">
               {inboxList.map((conver) => {
                 const profile = conver.user_profiles || {};
                 const username =
@@ -140,16 +143,18 @@ function AdminInbox() {
                       {String(username).charAt(0).toUpperCase()}
                     </div>
                     <div className="inbox-user-info">
-                      <span className="inbox-user-id" title={conver.conversation_user_id}>
-                        {username}
-                      </span>
+                      <div className="inbox-user-info-top">
+                        <span className="inbox-user-id" title={conver.conversation_user_id}>
+                          {username}
+                        </span>
+                        <span className="inbox-last-msg-time">
+                          {formatDate(conver.created_at)}
+                        </span>
+                      </div>
                       <span className="inbox-last-msg">
-                        {conver.message.length > 30
-                          ? conver.message.slice(0, 30) + "..."
+                        {conver.message.length > 40
+                          ? conver.message.slice(0, 40) + "..."
                           : conver.message}
-                      </span>
-                      <span className="inbox-last-msg-time">
-                        {formatDate(conver.created_at)}
                       </span>
                     </div>
                   </li>
@@ -160,9 +165,9 @@ function AdminInbox() {
         </div>
 
         {/* Right Side: Chat Window */}
-        <div className="inbox-chat-area">
+        <div className={`inbox-chat-area flex-1 min-w-0 ${selectedUser ? "flex" : "hidden sm:flex"}`}>
           {selectedUser ? (
-            <div className="chat-window">
+            <div className="chat-window flex flex-col w-full h-full">
               <div className="chat-header">
                 <button 
                   type="button"
@@ -173,7 +178,19 @@ function AdminInbox() {
                 >
                   <ArrowLeft size={18} />
                 </button>
-                <h4>Conversation</h4>
+                {(() => {
+                  const profile = inboxList.find(c => c.conversation_user_id === selectedUser)?.user_profiles || {};
+                  const uname = profile?.username || profile?.email?.split("@")[0] || "User";
+                  return (
+                    <>
+                      <div className="chat-header-avatar">{uname.charAt(0).toUpperCase()}</div>
+                      <div className="chat-header-info">
+                        <h4>{uname}</h4>
+                        <span className="chat-header-sub">Conversation</span>
+                      </div>
+                    </>
+                  );
+                })()}
               </div>
 
               <div className="chat-messages">
@@ -198,10 +215,10 @@ function AdminInbox() {
                         key={msg.id}
                         className={`chat-bubble-container ${
                           isAdmin ? "is-admin" : "is-user"
-                        }`}
+                        } w-full max-w-full flex ${isAdmin ? "justify-end" : "justify-start"} mb-4`}
                       >
-                        <div className="chat-bubble">
-                          <p className="chat-text">{msg.message}</p>
+                        <div className="chat-bubble break-words overflow-hidden max-w-[85%] sm:max-w-[70%]">
+                          <p className="chat-text whitespace-pre-wrap">{msg.message}</p>
                           <span className="chat-time">
                             {formatDate(msg.created_at)}
                           </span>

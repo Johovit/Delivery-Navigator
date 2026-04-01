@@ -247,10 +247,12 @@
 }
 
 /* Push the clear dates button to align visually with the inputs if present */
-.admin-filters .secondary-btn {
+.clear-dates-btn {
   align-self: flex-end;
   height: 42px; /* standard input height */
-  margin-top: 28px; /* offset for label gap */
+  padding: 0 16px;
+  flex: 0 0 auto;
+  white-space: nowrap;
 }
 
 /* Remove default margin when order-filters is used inside admin-filters */

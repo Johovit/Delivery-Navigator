@@ -73,15 +73,18 @@ export default function AdminLogin() {
                     throw new Error("Access denied. This account does not have admin privileges.");
                 }
 
-                if (!data || !data.username) {
-                    const username = email.split('@')[0];
-                    await supabase.from("user_profiles").upsert({
+                if (!data || !data.username || !data.email) {
+                    const username = data?.username || email.split('@')[0];
+                    const { error: updateError } = await supabase.from("user_profiles").upsert({
                         id: user.id,
                         email: email,
                         username: username,
-                        role: data?.role || 'admin',
-                        updated_at: new Date().toISOString()
+                        role: data?.role || 'admin'
                     }, { onConflict: 'id' });
+                    
+                    if (updateError) {
+                        console.error("Supabase Profile Upsert Error in AdminLogin:", updateError);
+                    }
                 }
 
                 // Is admin - redirect to dashboard
@@ -96,6 +99,9 @@ export default function AdminLogin() {
             } else if (msg.includes("email not confirmed")) {
                 setError("Please verify your email address before logging in. Check your inbox.");
                 startCooldown(3);
+            } else if (msg.includes("invalid login credentials")) {
+                setError("Incorrect admin email or password. Please try again.");
+                startCooldown(3);
             } else {
                 setError(err.message || "Failed to log in");
                 startCooldown(3);
@@ -107,8 +113,8 @@ export default function AdminLogin() {
     };
 
     return (
-        <div className="auth-container">
-            <div className="auth-card" style={{ borderTop: "4px solid var(--color-error)" }}>
+        <div className="auth-container flex items-center justify-center min-h-screen p-4 sm:p-6">
+            <div className="auth-card w-full max-w-[420px] mx-auto overflow-hidden" style={{ borderTop: "4px solid var(--color-error)" }}>
                 <div className="auth-header">
                     <div style={{ 
                         width: "48px", height: "48px", borderRadius: "12px", 
