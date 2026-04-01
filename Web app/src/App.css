@@ -3412,9 +3412,12 @@ button.status-badge.completed.clickable:active {
 }
 
 .payment-success-icon {
-  font-size: 64px;
-  margin-bottom: 16px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 20px;
   line-height: 1;
+  color: var(--color-success);
 }
 
 .payment-success-modal h2 {
@@ -3452,11 +3455,11 @@ button.status-badge.completed.clickable:active {
 }
 
 .city-divider {
-  text-align: center;
-  font-size: 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
   color: var(--text-faint);
-  margin: 4px 0 16px;
-  letter-spacing: 4px;
+  margin: 12px 0 24px;
 }
 
 .required-star {
