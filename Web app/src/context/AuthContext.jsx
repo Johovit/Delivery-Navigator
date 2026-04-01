@@ -60,7 +60,6 @@ export function AuthProvider({ children }) {
                 
                 if (isMounted) {
                     if (error) {
-                        console.error("Error fetching user profile:", error);
                         setRole("user"); // Fallback
                         setUsername(null);
                     } else {
@@ -68,9 +67,8 @@ export function AuthProvider({ children }) {
                         setUsername(data?.username || null);
                     }
                 }
-            } catch (err) {
+            } catch {
                 if (isMounted) {
-                    console.error("Failed to fetch profile:", err);
                     setRole("user");
                     setUsername(null);
                 }

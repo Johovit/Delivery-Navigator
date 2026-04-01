@@ -6,6 +6,7 @@ import { searchCities } from "../data/tamilnaduCities";
 import { fetchRoadRoute } from "../services/routingService";
 import { makeLabelMarker } from "../utils/mapHelpers";
 import { formatDuration } from "../utils/formatters";
+import { CheckCircle, Check, ArrowDown, Loader } from "lucide-react";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 const isValidPincode = (p) => /^\d{6}$/.test((p || "").trim());
@@ -36,10 +37,12 @@ function CityInput({
     <div className="city-input-block">
       {/* City search */}
       <div className="input-group" style={{ position: "relative" }}>
-        <label>
+        <label htmlFor={`${label.toLowerCase()}-city`}>
           {label} City <span className="required-star">*</span>
         </label>
         <input
+          id={`${label.toLowerCase()}-city`}
+          name={`${label.toLowerCase()}City`}
           type="text"
           value={query}
           onChange={(e) => onQuery(e.target.value)}
@@ -75,10 +78,13 @@ function CityInput({
 
       {/* Pincode */}
       <div className="input-group">
-        <label>
+        <label htmlFor={`${label.toLowerCase()}-pincode`}>
           {label} Pincode <span className="required-star">*</span>
         </label>
         <input
+          id={`${label.toLowerCase()}-pincode`}
+          name={`${label.toLowerCase()}Pincode`}
+          autoComplete="postal-code"
           type="text"
           inputMode="numeric"
           value={pincode}
@@ -99,7 +105,7 @@ function PaymentSuccessModal({ amount, pickup, delivery, onClose }) {
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="payment-success-modal" onClick={(e) => e.stopPropagation()}>
-        <div className="payment-success-icon">Done</div>
+        <div className="payment-success-icon"><CheckCircle size={48} /></div>
         <h2>Payment Successful!</h2>
         <p className="payment-success-amount">₹{Number(amount).toFixed(2)} paid</p>
         <div className="payment-success-details">
@@ -335,7 +341,7 @@ export default function CreateOrder() {
             key={label}
             className={`step ${currentStep > idx + 1 ? "completed" : ""} ${currentStep === idx + 1 ? "active" : ""}`}
           >
-            <div className="step-circle">{currentStep > idx + 1 ? "Done" : idx + 1}</div>
+            <div className="step-circle">{currentStep > idx + 1 ? <Check size={16} /> : idx + 1}</div>
             <span className="step-label">{label}</span>
           </div>
         ))}
@@ -360,7 +366,7 @@ export default function CreateOrder() {
             pincodeError={pincodeErrors.pickup}
           />
 
-          <div className="city-divider">to</div>
+          <div className="city-divider"><ArrowDown size={20} /></div>
 
           <CityInput
             label="Delivery"
@@ -391,8 +397,8 @@ export default function CreateOrder() {
           <h2>Package Details</h2>
 
           <div className="input-group">
-            <label>Package Type</label>
-            <select value={packageType} onChange={(e) => setPackageType(e.target.value)}>
+            <label htmlFor="packageType">Package Type</label>
+            <select id="packageType" name="packageType" value={packageType} onChange={(e) => setPackageType(e.target.value)}>
               <option value="Parcel">Parcel (Standard Box)</option>
               <option value="Courier">Courier (Documents / Letters)</option>
               <option value="Fragile">Fragile (Handle with Care)</option>
@@ -401,8 +407,10 @@ export default function CreateOrder() {
           </div>
 
           <div className="input-group">
-            <label>Weight (kg) <span className="required-star">*</span></label>
+            <label htmlFor="weight">Weight (kg) <span className="required-star">*</span></label>
             <input
+              id="weight"
+              name="weight"
               type="number"
               min="0.1"
               step="0.1"
@@ -413,13 +421,15 @@ export default function CreateOrder() {
           </div>
 
           <div className="input-group">
-            <label>
+            <label htmlFor="description">
               Description <span className="required-star">*</span>
               <span style={{ fontWeight: 400, color: "var(--text-muted)", fontSize: "12px", marginLeft: "6px" }}>
                 (what's inside, special instructions)
               </span>
             </label>
             <textarea
+              id="description"
+              name="description"
               rows={3}
               value={description}
               onChange={(e) => { setDescription(e.target.value); if (e.target.value.trim()) setDescError(""); }}
@@ -448,13 +458,15 @@ export default function CreateOrder() {
           <h2>Schedule Pickup</h2>
 
           <div className="input-group">
-            <label>
+            <label htmlFor="pickupTime">
               Pickup Date & Time <span className="required-star">*</span>
               <span style={{ fontWeight: 400, color: "var(--text-muted)", fontSize: "12px", marginLeft: "6px" }}>
                 (minimum 15 min from now)
               </span>
             </label>
             <input
+              id="pickupTime"
+              name="pickupTime"
               type="datetime-local"
               value={pickupTime}
               min={getMinPickupTime()}
@@ -478,7 +490,13 @@ export default function CreateOrder() {
           <div className="form-actions">
             <button className="secondary-btn" onClick={() => setCurrentStep(2)}>Back</button>
             <button className="accent-btn" onClick={calculateRoute} disabled={!pickupTime || routeLoading}>
-              {routeLoading ? "Fetching route..." : "Calculate Route and Summary"}
+              {routeLoading ? (
+                <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                  <Loader className="spin" size={18} /> Fetching route...
+                </span>
+              ) : (
+                "Calculate Route and Summary"
+              )}
             </button>
           </div>
         </div>
@@ -545,8 +563,8 @@ export default function CreateOrder() {
               { value: "NetBanking", label: "Net Banking",   sub: "All major Indian banks" },
               { value: "COD", label: "Cash on Delivery",      sub: "Pay when you receive" },
             ].map(({ value, label, sub }) => (
-              <label key={value} className={`payment-option ${paymentMethod === value ? "selected" : ""}`}>
-                <input type="radio" name="payment" value={value} checked={paymentMethod === value} onChange={() => setPaymentMethod(value)} />
+              <label key={value} htmlFor={`pay-${value}`} className={`payment-option ${paymentMethod === value ? "selected" : ""}`}>
+                <input id={`pay-${value}`} type="radio" name="payment" value={value} checked={paymentMethod === value} onChange={() => setPaymentMethod(value)} />
                 <div>
                   <p className="payment-option-label">{label}</p>
                   <p className="payment-option-sub">{sub}</p>

@@ -49,10 +49,6 @@ function Layout() {
         <main className="layout-content">
           <Outlet />
         </main>
-        <footer className="app-footer">
-          <span>Delivery Navigator · Smart routing across Tamil Nadu</span>
-          <span className="footer-tagline">Designed for Tamil Nadu logistics and delivery operations</span>
-        </footer>
         <ToastContainer />
       </div>
     </div>

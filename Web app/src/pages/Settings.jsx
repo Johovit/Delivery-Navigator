@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAppContext } from "../context/AppContext";
 import { useAuth } from "../context/AuthContext";
 import { logOut } from "../services/authService";
+import { LogOut } from "lucide-react";
 
 function Settings() {
   const { settings, updateSettings, showToast } = useAppContext();
@@ -40,7 +41,9 @@ function Settings() {
       {showLogoutConfirm && (
         <div className="modal-overlay" onClick={() => setShowLogoutConfirm(false)}>
           <div className="confirm-dialog" onClick={(e) => e.stopPropagation()}>
-            <div className="confirm-icon" aria-hidden="true">!</div>
+            <div className="confirm-icon" aria-hidden="true">
+              <LogOut size={28} color="var(--color-error)" />
+            </div>
             <h3>Confirm Logout</h3>
             <p>Are you sure you want to log out of Delivery Navigator?</p>
             <div className="confirm-actions">
@@ -101,7 +104,7 @@ function Settings() {
           </div>
           <form onSubmit={handleSave}>
             <div className="settings-group">
-              <label className="settings-label">
+              <label className="settings-label" htmlFor="cost-per-km">
                 <span>Cost per KM (₹)</span>
                 <span className="settings-helper">
                   Applied to all new delivery orders for cost estimation.
@@ -109,6 +112,9 @@ function Settings() {
               </label>
               <div className="settings-input-row">
                 <input
+                  id="cost-per-km"
+                  name="costPerKm"
+                  autoComplete="off"
                   type="number"
                   min="0"
                   step="0.1"

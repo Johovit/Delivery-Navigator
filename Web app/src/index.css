@@ -5,39 +5,39 @@
 ================================ */
 :root {
   /* Colors */
-  --color-primary: #1E3A8A;
-  --color-primary-mid: #2563EB;
-  --color-primary-light: #3B82F6;
-  --color-primary-pale: #EFF6FF;
-  --color-accent: #F97316;
-  --color-accent-pale: #FFF7ED;
-  --color-success: #16A34A;
-  --color-success-pale: #F0FDF4;
-  --color-error: #DC2626;
+  --color-primary: #4F46E5;
+  --color-primary-mid: #6366F1;
+  --color-primary-light: #818CF8;
+  --color-primary-pale: #EEF2FF;
+  --color-accent: #334155;
+  --color-accent-pale: #F8FAFC;
+  --color-success: #10B981;
+  --color-success-pale: #ECFDF5;
+  --color-error: #EF4444;
   --color-error-pale: #FEF2F2;
-  --color-warning: #D97706;
+  --color-warning: #F59E0B;
   --color-warning-pale: #FFFBEB;
 
   /* Backgrounds */
-  --bg-app: #F9FAFB;
+  --bg-app: #F8FAFC;
   --bg-surface: #FFFFFF;
-  --bg-muted: #F3F4F6;
+  --bg-muted: #F1F5F9;
 
   /* Text */
-  --text-primary: #111827;
-  --text-secondary: #374151;
-  --text-muted: #6B7280;
-  --text-faint: #9CA3AF;
+  --text-primary: #0F172A;
+  --text-secondary: #475569;
+  --text-muted: #64748B;
+  --text-faint: #94A3B8;
 
   /* Border */
-  --border: #E5E7EB;
-  --border-focus: #3B82F6;
+  --border: #E2E8F0;
+  --border-focus: #818CF8;
 
-  /* Shadows */
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, .05);
-  --shadow-md: 0 1px 3px rgba(0, 0, 0, .08), 0 4px 12px rgba(0, 0, 0, .06);
-  --shadow-lg: 0 4px 6px rgba(0, 0, 0, .07), 0 12px 28px rgba(0, 0, 0, .08);
-  --shadow-xl: 0 20px 60px rgba(0, 0, 0, .12);
+  /* Shadows - Softer SaaS style */
+  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.04);
+  --shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.05), 0 2px 4px -2px rgba(15, 23, 42, 0.05);
+  --shadow-lg: 0 10px 15px -3px rgba(15, 23, 42, 0.05), 0 4px 6px -4px rgba(15, 23, 42, 0.05);
+  --shadow-xl: 0 20px 25px -5px rgba(15, 23, 42, 0.05), 0 8px 10px -6px rgba(15, 23, 42, 0.05);
 
   /* Spacing grid (8px base) */
   --space-1: 4px;
@@ -49,11 +49,11 @@
   --space-8: 32px;
   --space-10: 40px;
 
-  /* Radius */
-  --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 14px;
-  --radius-xl: 20px;
+  /* Radius - Boxy SaaS style */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
   --radius-full: 9999px;
 
   /* Typography */

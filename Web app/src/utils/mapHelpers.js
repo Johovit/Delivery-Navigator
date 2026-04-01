@@ -39,22 +39,29 @@ export function interpolateAlongRoute(geometry, t) {
   return geometry[geometry.length - 1];
 }
 
+import React from "react";
+import { renderToString } from "react-dom/server";
+import { Package, MapPin } from "lucide-react";
+
 /**
- * Create a pin-shaped Leaflet divIcon with a letter label.
- * Used for Source (A) and Destination (B) markers.
+ * Create a pin-shaped Leaflet divIcon with a lucide icon.
+ * Used for Source (A=Package) and Destination (B=MapPin) markers.
  */
 export function makeLabelMarker(label, color) {
+  const IconComponent = label === "A" ? Package : MapPin;
+  const iconHtml = renderToString(React.createElement(IconComponent, { size: 16, color: "#fff", strokeWidth: 2.5 }));
+
   return L.divIcon({
     html: `<div style="
-      background:${color};color:#fff;font-weight:700;font-size:13px;
-      width:28px;height:28px;border-radius:50% 50% 50% 0;
+      background:${color};color:#fff;
+      width:30px;height:30px;border-radius:50% 50% 50% 0;
       transform:rotate(-45deg);display:flex;align-items:center;
       justify-content:center;border:2px solid #fff;
       box-shadow:0 2px 8px rgba(0,0,0,0.3);
-    "><span style="transform:rotate(45deg)">${label}</span></div>`,
+    "><div style="transform:rotate(45deg); display:flex;">${iconHtml}</div></div>`,
     className: "",
-    iconSize: [28, 28],
-    iconAnchor: [14, 28],
+    iconSize: [30, 30],
+    iconAnchor: [15, 30],
   });
 }
 

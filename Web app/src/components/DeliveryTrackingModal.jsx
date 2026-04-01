@@ -5,7 +5,8 @@ import {
   makeLabelMarker,
 } from "../utils/mapHelpers";
 import { formatDuration, formatRemaining } from "../utils/formatters";
-
+import React from "react";
+import { X } from "lucide-react";
 /* ─────────────────────────────────────────────────────────────
    Pure helpers — no React, safe to keep outside the component
 ───────────────────────────────────────────────────────────── */
@@ -97,11 +98,11 @@ function DeliveryTrackingModal({ route, onClose, onDeliveryComplete }) {
         zIndexOffset: 1000,
       }).addTo(map);
 
-      // Initial lorry position
       const initProgress = computeProgress();
       const initPos = interpolateAlongRoute(geometry, initProgress);
+      const truckHtml = `<img src="/truck.svg" style="width: 32px; height: 32px; object-fit: contain; display: block;" alt="Delivery Truck" />`;
       const lorryIcon = L.divIcon({
-        html: `<div class="delivery-icon">•</div>`,
+        html: `<div class="delivery-icon" style="display:flex;align-items:center;justify-content:center;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.3));background:transparent;">${truckHtml}</div>`,
         className: "",
         iconSize: [36, 36],
         iconAnchor: [18, 18],
@@ -176,8 +177,8 @@ function DeliveryTrackingModal({ route, onClose, onDeliveryComplete }) {
               </p>
             </div>
           </div>
-          <button className="tracking-close-btn" onClick={onClose} aria-label="Close tracking">
-            Close
+          <button className="tracking-close-btn" style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={onClose} aria-label="Close tracking">
+            <X size={20} />
           </button>
         </div>
 

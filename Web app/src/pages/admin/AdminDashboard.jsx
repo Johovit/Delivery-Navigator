@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { RefreshCw } from "lucide-react";
 import { fetchAllOrdersAdmin } from "../../services/orderService";
 import { useAppContext } from "../../context/AppContext";
 import EmptyState from "../../components/EmptyState";
@@ -24,7 +25,7 @@ function AdminDashboard() {
       setStats({ total: all.length, planned, in_progress, completed });
       // Show 5 most recent
       setRecentOrders(all.slice(0, 5));
-    } catch (err) {
+    } catch {
       showToast("Failed to load stats", "error");
     } finally {
       setLoading(false);
@@ -56,8 +57,14 @@ function AdminDashboard() {
           <h3>Admin Dashboard</h3>
           <p className="page-sub">Overview of all delivery operations</p>
         </div>
-        <button className="secondary-btn" onClick={loadStats} disabled={loading}>
-          Refresh
+        <button
+          className="icon-btn"
+          onClick={loadStats}
+          disabled={loading}
+          aria-label="Refresh dashboard"
+          title="Refresh"
+        >
+          <RefreshCw size={18} className={loading ? "spin" : ""} />
         </button>
       </div>
 

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-
+import { Zap, ShieldCheck, BadgeDollarSign } from "lucide-react";
 function Dashboard() {
   const navigate = useNavigate();
   const [pickupPincode, setPickupPincode] = useState("");
@@ -26,21 +26,21 @@ function Dashboard() {
           
           <div className="landing-features">
             <div className="feature-item">
-              <span className="feature-icon" aria-hidden="true">•</span>
+              <Zap size={24} className="feature-icon" aria-hidden="true" />
               <div className="feature-text">
                 <h4>Lightning Fast</h4>
                 <p>Same-day and next-day options</p>
               </div>
             </div>
             <div className="feature-item">
-              <span className="feature-icon" aria-hidden="true">•</span>
+              <ShieldCheck size={24} className="feature-icon" aria-hidden="true" />
               <div className="feature-text">
                 <h4>Fully Secure</h4>
                 <p>Real-time tracking & insured packages</p>
               </div>
             </div>
             <div className="feature-item">
-              <span className="feature-icon" aria-hidden="true">•</span>
+              <BadgeDollarSign size={24} className="feature-icon" aria-hidden="true" />
               <div className="feature-text">
                 <h4>Best Rates</h4>
                 <p>Transparent pricing with no hidden fees</p>
@@ -56,8 +56,11 @@ function Dashboard() {
             <p className="card-sub">Enter pincodes to get started</p>
             
             <div className="input-group">
-              <label>Pickup Pincode</label>
+              <label htmlFor="pickup-pincode">Pickup Pincode</label>
               <input
+                id="pickup-pincode"
+                name="pickupPincode"
+                autoComplete="postal-code"
                 type="text"
                 placeholder="e.g. 600001"
                 value={pickupPincode}
@@ -67,8 +70,11 @@ function Dashboard() {
             </div>
             
             <div className="input-group">
-              <label>Delivery Pincode</label>
+              <label htmlFor="delivery-pincode">Delivery Pincode</label>
               <input
+                id="delivery-pincode"
+                name="deliveryPincode"
+                autoComplete="postal-code"
                 type="text"
                 placeholder="e.g. 641001"
                 value={deliveryPincode}

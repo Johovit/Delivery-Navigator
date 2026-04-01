@@ -6,6 +6,7 @@ import {
 } from "../../services/messageService";
 import { useAppContext } from "../../context/AppContext";
 import EmptyState from "../../components/EmptyState";
+import { Loader, RefreshCw, ArrowLeft } from "lucide-react";
 
 function AdminInbox() {
   const { showToast } = useAppContext();
@@ -40,7 +41,7 @@ function AdminInbox() {
     try {
       const list = await fetchAdminInboxList();
       setInboxList(list);
-    } catch (err) {
+    } catch {
       showToast("Failed to load inbox", "error");
     } finally {
       setLoadingList(false);
@@ -52,7 +53,7 @@ function AdminInbox() {
     try {
       const msgs = await fetchConversationMessages(userId);
       setMessages(msgs);
-    } catch (err) {
+    } catch {
       showToast("Failed to load conversation", "error");
     } finally {
       setLoadingChat(false);
@@ -68,7 +69,7 @@ function AdminInbox() {
       const newMsg = await sendAdminReply(selectedUser, replyText);
       setMessages((prev) => [...prev, newMsg]);
       setReplyText("");
-    } catch (err) {
+    } catch {
       showToast("Failed to send reply", "error");
     } finally {
       setSending(false);
@@ -94,16 +95,24 @@ function AdminInbox() {
           <h3 className="page-title">Admin Inbox</h3>
           <p className="page-sub">Manage user conversations</p>
         </div>
-        <button className="secondary-btn" onClick={loadInbox} disabled={loadingList}>
-          Refresh
+        <button
+          className="icon-btn"
+          onClick={loadInbox}
+          disabled={loadingList}
+          aria-label="Refresh inbox"
+          title="Refresh"
+        >
+          <RefreshCw size={18} className={loadingList ? "spin" : ""} />
         </button>
       </div>
 
-      <div className="inbox-container">
+      <div className={`inbox-container ${selectedUser ? "mobile-chat-view" : "mobile-list-view"}`}>
         {/* Left Side: Users List */}
         <div className="inbox-sidebar">
           {loadingList ? (
-            <div className="inbox-loading">Loading users...</div>
+            <div className="inbox-loading" style={{ display: "flex", alignItems: "center", gap: "8px", justifyContent: "center" }}>
+              <Loader className="spin" size={18} /> Loading users...
+            </div>
           ) : inboxList.length === 0 ? (
             <EmptyState
               variant="inbox"
@@ -155,11 +164,24 @@ function AdminInbox() {
           {selectedUser ? (
             <div className="chat-window">
               <div className="chat-header">
+                <button 
+                  type="button"
+                  className="icon-btn mobile-back-btn" 
+                  onClick={() => setSelectedUser(null)}
+                  aria-label="Back to messages"
+                  title="Back"
+                >
+                  <ArrowLeft size={18} />
+                </button>
                 <h4>Conversation</h4>
               </div>
 
               <div className="chat-messages">
-                {loadingChat && <div className="inbox-loading">Loading messages...</div>}
+                {loadingChat && (
+                  <div className="inbox-loading" style={{ display: "flex", alignItems: "center", gap: "8px", justifyContent: "center", padding: "20px" }}>
+                    <Loader className="spin" size={18} /> Loading messages...
+                  </div>
+                )}
                 {!loadingChat && messages.length === 0 && (
                   <EmptyState
                     variant="messages"
@@ -191,7 +213,11 @@ function AdminInbox() {
               </div>
 
               <form className="chat-input-area" onSubmit={handleSendReply}>
+                <label htmlFor="replyText" style={{ position: "absolute", width: "1px", height: "1px", padding: 0, margin: "-1px", overflow: "hidden", clip: "rect(0, 0, 0, 0)", whiteSpace: "nowrap", border: 0 }}>Reply Text</label>
                 <input
+                  id="replyText"
+                  name="replyText"
+                  autoComplete="off"
                   type="text"
                   placeholder="Type your reply..."
                   value={replyText}

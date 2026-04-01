@@ -127,7 +127,9 @@ export default function Signup() {
                         <label htmlFor="email">Email</label>
                         <input
                             id="email"
+                            name="email"
                             type="email"
+                            autoComplete="email"
                             placeholder="you@example.com"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
@@ -139,7 +141,9 @@ export default function Signup() {
                         <label htmlFor="password">Password</label>
                         <input
                             id="password"
+                            name="password"
                             type="password"
+                            autoComplete="new-password"
                             placeholder="At least 6 characters"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
@@ -151,7 +155,9 @@ export default function Signup() {
                         <label htmlFor="confirmPassword">Confirm Password</label>
                         <input
                             id="confirmPassword"
+                            name="confirmPassword"
                             type="password"
+                            autoComplete="new-password"
                             placeholder="••••••••"
                             value={confirmPassword}
                             onChange={(e) => setConfirmPassword(e.target.value)}

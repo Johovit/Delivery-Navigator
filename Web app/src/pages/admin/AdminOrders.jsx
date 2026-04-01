@@ -4,6 +4,7 @@ import { useAppContext } from "../../context/AppContext";
 import DeliveryTrackingModal from "../../components/DeliveryTrackingModal";
 import OrderReceiptModal from "../../components/OrderReceiptModal";
 import EmptyState from "../../components/EmptyState";
+import { Loader, RefreshCw, MapPin, CheckCircle, XCircle } from "lucide-react";
 import "./AdminOrders.css";
 
 const STATUS_OPTIONS = [
@@ -143,18 +144,30 @@ function AdminOrders() {
         <div>
           <h3>All Orders</h3>
           <p className="page-sub">
-            {loading ? "Loading…" : `${orders.length} order(s) found`}
+            {loading ? (
+              <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                <Loader className="spin" size={16} /> Loading…
+              </span>
+            ) : (
+              `${orders.length} order(s) found`
+            )}
           </p>
         </div>
-        <button className="secondary-btn" onClick={loadOrders} disabled={loading}>
-          Refresh
+        <button
+          className="icon-btn"
+          onClick={loadOrders}
+          disabled={loading}
+          aria-label="Refresh orders"
+          title="Refresh"
+        >
+          <RefreshCw size={18} className={loading ? "spin" : ""} />
         </button>
       </div>
 
       {/* Filters */}
       <div className="admin-filters">
-        <div className="filter-group">
-          <label>Status</label>
+        <div className="filter-group" style={{ minWidth: "250px" }}>
+          <span className="filter-label">Status</span>
           <div className="order-filters">
             {STATUS_OPTIONS.map((opt) => (
               <button
@@ -167,23 +180,32 @@ function AdminOrders() {
             ))}
           </div>
         </div>
-        <div className="filter-group">
-          <label>Date From</label>
-          <input
-            type="date"
-            value={dateFrom}
-            onChange={(e) => setDateFrom(e.target.value)}
-            className="date-input"
-          />
-        </div>
-        <div className="filter-group">
-          <label>Date To</label>
-          <input
-            type="date"
-            value={dateTo}
-            onChange={(e) => setDateTo(e.target.value)}
-            className="date-input"
-          />
+
+        <div className="date-filters-wrapper">
+          <div className="filter-group">
+            <label htmlFor="dateFrom" className="filter-label">Date From</label>
+            <input
+              id="dateFrom"
+              name="dateFrom"
+              type="date"
+              value={dateFrom}
+              onChange={(e) => setDateFrom(e.target.value)}
+              className="date-input"
+              autoComplete="off"
+            />
+          </div>
+          <div className="filter-group">
+            <label htmlFor="dateTo" className="filter-label">Date To</label>
+            <input
+              id="dateTo"
+              name="dateTo"
+              type="date"
+              value={dateTo}
+              onChange={(e) => setDateTo(e.target.value)}
+              className="date-input"
+              autoComplete="off"
+            />
+          </div>
         </div>
         {(dateFrom || dateTo) && (
           <button
@@ -198,7 +220,10 @@ function AdminOrders() {
 
       {/* Orders Table */}
       {loading ? (
-        <div className="empty-state"><p>Loading orders…</p></div>
+        <div className="empty-state" style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "12px" }}>
+          <Loader className="spin" size={28} style={{ color: "var(--color-primary-mid)" }} />
+          <p>Loading orders…</p>
+        </div>
       ) : orders.length === 0 ? (
         <EmptyState
           variant="orders"
@@ -261,29 +286,29 @@ function AdminOrders() {
                     <td>
                       <div className="admin-table-actions">
                         <button
-                          className="action-track"
+                          className="tbl-action track"
                           onClick={() => handleTrackOrder(order)}
                           disabled={updatingId === order.id || order.status !== "in_progress"}
                         >
-                          Track
+                          <MapPin size={14} /> Track
                         </button>
                         
                         <button
-                          className="action-complete"
+                          className="tbl-action complete"
                           onClick={() => handleCompleteOrder(order)}
                           disabled={isFinal || updatingId === order.id}
                           title={isFinal ? "Order already completed/cancelled" : "Mark order as completed"}
                         >
-                          Complete
+                          <CheckCircle size={14} /> Complete
                         </button>
 
                         {!isCancelled && (
                           <button
-                            className="action-cancel"
+                            className="tbl-action cancel"
                             onClick={() => handleCancelOrder(order)}
                             disabled={isFinal || updatingId === order.id}
                           >
-                            Cancel
+                            <XCircle size={14} /> Cancel
                           </button>
                         )}
                       </div>

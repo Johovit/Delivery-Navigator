@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { fetchUserMessages, sendUserMessage } from "../services/messageService";
 import { useAppContext } from "../context/AppContext";
 import EmptyState from "../components/EmptyState";
+import { Loader, RefreshCw } from "lucide-react";
 
 function UserMessages() {
   const { showToast } = useAppContext();
@@ -67,14 +68,24 @@ function UserMessages() {
           <h3 className="page-title">Support Messages</h3>
           <p className="page-sub">Chat with our support team</p>
         </div>
-        <button className="secondary-btn" onClick={loadMessages} disabled={loading}>
-          Refresh
+        <button
+          className="icon-btn"
+          onClick={loadMessages}
+          disabled={loading}
+          aria-label="Refresh messages"
+          title="Refresh"
+        >
+          <RefreshCw size={18} className={loading ? "spin" : ""} />
         </button>
       </div>
 
       <div className="card chat-window user-chat-window" style={{ height: "calc(100vh - 220px)" }}>
         <div className="chat-messages">
-          {loading && <div className="inbox-loading">Loading your messages...</div>}
+          {loading && (
+            <div className="inbox-loading" style={{ display: "flex", alignItems: "center", gap: "8px", justifyContent: "center" }}>
+              <Loader className="spin" size={18} /> Loading your messages...
+            </div>
+          )}
           {!loading && messages.length === 0 && (
             <EmptyState
               variant="messages"
@@ -104,7 +115,11 @@ function UserMessages() {
         </div>
 
         <form className="chat-input-area" onSubmit={handleSendMessage}>
+          <label htmlFor="messageText" style={{ position: "absolute", width: "1px", height: "1px", padding: 0, margin: "-1px", overflow: "hidden", clip: "rect(0, 0, 0, 0)", whiteSpace: "nowrap", border: 0 }}>Message</label>
           <input
+            id="messageText"
+            name="messageText"
+            autoComplete="off"
             type="text"
             placeholder="Type a message..."
             value={messageText}

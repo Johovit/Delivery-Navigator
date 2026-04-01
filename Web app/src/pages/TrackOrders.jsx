@@ -4,6 +4,7 @@ import { useAppContext } from "../context/AppContext";
 import DeliveryTrackingModal from "../components/DeliveryTrackingModal";
 import OrderReceiptModal from "../components/OrderReceiptModal";
 import EmptyState from "../components/EmptyState";
+import { Loader, Truck, MapPin } from "lucide-react";
 
 // Map order DB fields → shape expected by DeliveryTrackingModal
 function toTrackingShape(order) {
@@ -107,9 +108,13 @@ function TrackOrders() {
         <div>
           <h3>Track Orders</h3>
           <p className="page-sub">
-            {ordersLoading
-              ? "Loading your orders..."
-              : `${orders.length} order${orders.length !== 1 ? "s" : ""}`}
+            {ordersLoading ? (
+              <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                <Loader className="spin" size={16} /> Loading your orders...
+              </span>
+            ) : (
+              `${orders.length} order${orders.length !== 1 ? "s" : ""}`
+            )}
           </p>
         </div>
         <button className="accent-btn" onClick={() => navigate("/create-order")}>
@@ -134,7 +139,10 @@ function TrackOrders() {
 
       {/* Orders */}
       {ordersLoading ? (
-        <div className="empty-state">Loading orders...</div>
+        <div className="empty-state">
+          <Loader className="spin" size={24} style={{ marginBottom: "12px", color: "var(--color-primary-mid)" }} />
+          Loading orders...
+        </div>
       ) : filteredOrders.length > 0 ? (
         <div className="orders-grid">
           {filteredOrders.map((order) => (
@@ -157,14 +165,14 @@ function TrackOrders() {
               {/* Route */}
               <div className="order-card-body">
                 <div className="route-endpoints">
-                  <div className="endpoint">
-                    <span className="dot src" />
-                    {order.pickup_address || "—"}
+                  <div className="endpoint" style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                    <Truck size={16} style={{ color: "var(--text-muted)", flexShrink: 0 }} />
+                    <span style={{ flex: 1 }}>{order.pickup_address || "—"}</span>
                   </div>
                   <div className="endpointline" />
-                  <div className="endpoint">
-                    <span className="dot dst" />
-                    {order.delivery_address || "—"}
+                  <div className="endpoint" style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                    <MapPin size={16} style={{ color: "var(--color-primary-mid)", flexShrink: 0 }} />
+                    <span style={{ flex: 1 }}>{order.delivery_address || "—"}</span>
                   </div>
                 </div>
 

@@ -1,12 +1,14 @@
 import { useLocation, useNavigate } from "react-router-dom";
+import { Menu } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import UserAvatar from "./UserAvatar";
 
 const titles = {
-  "/dashboard": { title: "Dashboard", sub: "Your delivery operations at a glance" },
-  "/create-order": { title: "Create Order", sub: "Send anything, anywhere from your doorstep" },
-  "/track-orders": { title: "Track Orders", sub: "Browse your current and history orders" },
-  "/messages": { title: "My Queries", sub: "Chat with our support team" },
+  "/dashboard": { title: "Dashboard", sub: "Delivery Overview" },
+  "/create-order": { title: "Create Order", sub: "Plan a new delivery" },
+  "/track-orders": { title: "Track Orders", sub: "Live route tracking" },
+  "/messages": { title: "Support", sub: "Priority driver support" },
+  "/admin/dashboard": { title: "Admin Portal", sub: "System overview" },
   "/admin/orders": { title: "All Orders", sub: "Manage all delivery orders" },
   "/admin/inbox": { title: "Inbox", sub: "Respond to user queries" },
   "/settings": { title: "Settings", sub: "Customize your Delivery Navigator" },
@@ -31,7 +33,7 @@ function Navbar({ onMenuClick = () => {} }) {
         aria-label="Open navigation menu"
         title="Open menu"
       >
-        Menu
+        <Menu size={24} />
       </button>
 
       <div className="top-navbar-left">

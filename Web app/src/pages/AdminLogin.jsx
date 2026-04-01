@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { logIn, logOut } from "../services/authService";
 import { useAuth } from "../context/AuthContext";
 import { supabase } from "../lib/supabaseClient";
+import { Lock } from "lucide-react";
 
 export default function AdminLogin() {
     const [email, setEmail] = useState("");
@@ -115,7 +116,7 @@ export default function AdminLogin() {
                         display: "flex", alignItems: "center", justifyContent: "center",
                         fontSize: "24px", margin: "0 auto 16px"
                     }}>
-                        Admin
+                        <Lock size={24} />
                     </div>
                     <h2>Admin Portal</h2>
                     <p>Secure access for administrators</p>
@@ -128,7 +129,9 @@ export default function AdminLogin() {
                         <label htmlFor="email">Admin Email</label>
                         <input
                             id="email"
+                            name="email"
                             type="email"
+                            autoComplete="email"
                             placeholder="admin@example.com"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
@@ -140,7 +143,9 @@ export default function AdminLogin() {
                         <label htmlFor="password">Password</label>
                         <input
                             id="password"
+                            name="password"
                             type="password"
+                            autoComplete="current-password"
                             placeholder="••••••••"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}

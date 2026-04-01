@@ -145,69 +145,60 @@
 .admin-table-actions {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 8px;
-  flex-wrap: wrap;
+  justify-content: flex-start;
+  gap: 6px;
+  flex-wrap: wrap; /* allow wrap if column gets too tight */
 }
 
-.action-track {
-  min-width: 92px;
-  font-size: 12px;
-  padding: 8px 12px;
-  white-space: nowrap;
-  border: none;
-  border-radius: 8px;
-  background: #2563eb;
-  color: #fff;
+.tbl-action {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: 6px;
+  border: 1px solid transparent;
   cursor: pointer;
-  font-weight: 600;
-  transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
-}
-
-.action-cancel {
-  min-width: 92px;
-  font-size: 12px;
-  padding: 8px 12px;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   white-space: nowrap;
-  border: none;
-  border-radius: 8px;
-  background: #dc2626;
-  color: #fff;
-  cursor: pointer;
-  font-weight: 600;
-  transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+  letter-spacing: 0.02em;
 }
 
-.action-track:hover:not(:disabled),
-.action-cancel:hover:not(:disabled) {
+.tbl-action.track {
+  background: var(--color-primary-pale, #EFF6FF);
+  color: var(--color-primary-mid, #2563eb);
+}
+.tbl-action.track:hover:not(:disabled) {
+  background: var(--color-primary-mid, #2563eb);
+  color: #fff;
   transform: translateY(-1px);
-  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.12);
 }
 
-.action-complete {
-  min-width: 92px;
-  font-size: 12px;
-  padding: 8px 12px;
-  white-space: nowrap;
-  border: none;
-  border-radius: 8px;
+.tbl-action.complete {
+  background: #dcfce7;
+  color: #16a34a;
+}
+.tbl-action.complete:hover:not(:disabled) {
   background: #16a34a;
   color: #fff;
-  cursor: pointer;
-  font-weight: 600;
-  transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
-}
-
-.action-complete:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.12);
 }
 
-.action-track:disabled,
-.action-cancel:disabled,
-.action-complete:disabled {
-  opacity: 0.65;
+.tbl-action.cancel {
+  background: #fee2e2;
+  color: #dc2626;
+}
+.tbl-action.cancel:hover:not(:disabled) {
+  background: #dc2626;
+  color: #fff;
+  transform: translateY(-1px);
+}
+
+.tbl-action:disabled {
+  opacity: 0.5;
   cursor: not-allowed;
+  filter: grayscale(1);
 }
 
 @media (max-width: 1024px) {
@@ -221,5 +212,48 @@
   }
 }
 
-/* Old grid styles kept here for reference only (no longer used) */
-.admin-orders-grid { display: none; }
+/* Admin Filters */
+.admin-filters {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--space-4);
+  align-items: flex-start;
+  margin-bottom: var(--space-6);
+  width: 100%;
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.filter-label {
+  font-size: var(--font-base, 1rem);
+  color: var(--text-primary);
+  margin-bottom: var(--space-1);
+}
+
+.date-filters-wrapper {
+  display: flex;
+  gap: var(--space-4);
+  width: 100%;
+  flex-wrap: wrap; /* allow wrapping on super thin phones if necessary */
+}
+
+.date-filters-wrapper .filter-group {
+  flex: 1;
+  min-width: 130px;
+}
+
+/* Push the clear dates button to align visually with the inputs if present */
+.admin-filters .secondary-btn {
+  align-self: flex-end;
+  height: 42px; /* standard input height */
+  margin-top: 28px; /* offset for label gap */
+}
+
+/* Remove default margin when order-filters is used inside admin-filters */
+.admin-filters .order-filters {
+  margin-bottom: 0;
+}
