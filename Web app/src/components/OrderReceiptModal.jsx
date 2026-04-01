@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { useAuth } from "../context/AuthContext";
+import { X } from "lucide-react";
 
 function formatDateTime(value) {
   if (!value) return "—";
@@ -53,7 +54,7 @@ export default function OrderReceiptModal({ order, onClose }) {
             </div>
           </div>
           <button className="tracking-close-btn" onClick={onClose} aria-label="Close receipt">
-            Close
+            <X size={20} />
           </button>
         </div>
 
