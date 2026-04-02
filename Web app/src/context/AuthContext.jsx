@@ -25,14 +25,24 @@ export function AuthProvider({ children }) {
             try {
                 const { data: { session }, error } = await supabase.auth.getSession();
                 if (error) {
-                    console.error("Supabase Auth Error:", error.message);
-                    // If refresh token is invalid, clear local auth state
+                    // If it's a refresh token error or invalid session, handle it gracefully
+                    if (error.message?.includes("Refresh Token Not Found") || error.status === 400) {
+                        console.warn("Auth session expired, signing out...");
+                    } else {
+                        console.error("Supabase Auth Error:", error.message);
+                    }
+                    // Clear local auth state explicitly 
                     await supabase.auth.signOut();
+                    setSession(null);
+                    setUser(null);
+                } else {
+                    setSession(session);
+                    setUser(session?.user ?? null);
                 }
-                setSession(session);
-                setUser(session?.user ?? null);
             } catch (err) {
                 console.error("Unexpected auth initialization error:", err);
+                setSession(null);
+                setUser(null);
             } finally {
                 setAuthLoading(false);
             }
@@ -43,9 +53,12 @@ export function AuthProvider({ children }) {
         // Listen for changes
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
             async (event, session) => {
-                if (event === 'TOKEN_REFRESH_FAILED') {
-                    console.error("Token refresh failed, signing out...");
-                    await supabase.auth.signOut();
+                if (event === 'TOKEN_REFRESH_FAILED' || event === 'SIGNED_OUT') {
+                    if (event === 'TOKEN_REFRESH_FAILED') {
+                        console.warn("Token refresh failed, resetting session...");
+                        // Use a safe logout that doesn't trigger another cycle unnecessarily
+                        await supabase.auth.signOut();
+                    }
                     setSession(null);
                     setUser(null);
                 } else {
